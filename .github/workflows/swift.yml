@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   validate:
-    runs-on: macos-latest
+    runs-on: macos-26-intel
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
