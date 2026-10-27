@@ -13,7 +13,7 @@ let package = Package(
         .systemLibrary(name: "CZlib", path: "Support/CZlib"),
         .target(name: "MizonAPI", dependencies: ["CZlib", .product(name: "SignalRClient", package: "signalr-client-swift")], path: "Mizon.API"),
         .target(name: "MizonAPIClient", dependencies: ["MizonAPI"], path: "Mizon.API.Client"),
-        .testTarget(name: "MizonAPITests", dependencies: ["MizonAPI", "MizonAPIClient", "CZlib"], path: "Tests")
+        .testTarget(name: "MizonAPITests", dependencies: ["MizonAPI", "MizonAPIClient", "CZlib"], path: "Tests", resources: [.copy("Fixtures")])
     ],
     swiftLanguageModes: [.v6]
 )

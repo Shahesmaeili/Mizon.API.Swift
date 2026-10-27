@@ -238,3 +238,140 @@ struct MizonAPITests {
         #expect(try abs(JSONDecoder().decode(MusicListenerPresence.self, from: encoded).updatedAtUtc.timeIntervalSince1970 - listener.updatedAtUtc.timeIntervalSince1970) < 0.001)
     }
 }
+
+extension MizonAPITests {
+    @Test func plusSignsUseDotNetQueryEscaping() async throws {
+        let api = MizonApi(); try await api.setToken("a")
+        let query = "a+b & فارسی?=#"
+        let op = MizonApiRequest<GlobalSearchRequest, GlobalSearchItemResponse>(httpMethod: .GET, endpoint: URL(string: "https://example.com/search?keep=a%2Bb")!, apiRequest: GlobalSearchRequest(query: query))
+        let request = try await api.makeRequest(op)
+        let encoded = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)!.percentEncodedQuery!
+        #expect(encoded.contains("Query=a%2Bb%20%26%20"))
+        #expect(encoded.hasPrefix("keep=a%2Bb&"))
+        let serverValue = encoded.components(separatedBy: "&Query=")[1].replacingOccurrences(of: "+", with: " ").removingPercentEncoding
+        #expect(serverValue == query)
+    }
+    @Test func overallDeadlineAndCallerCancellation() async throws {
+        let started = ContinuousClock.now
+        do {
+            let _: Int = try await withRequestDeadline(seconds: 0.03) { try await Task.sleep(for: .seconds(2)); return 1 }
+            Issue.record("Expected overall deadline")
+        } catch { #expect((error as? BaseApiError)?.code == 106) }
+        #expect(started.duration(to: .now) < .seconds(1))
+        let task = Task {
+            try await withRequestDeadline(seconds: 10) { try await Task.sleep(for: .seconds(10)); return 1 }
+        }
+        task.cancel()
+        do { _ = try await task.value; Issue.record("Expected cancellation") }
+        catch { #expect(error is CancellationError) }
+    }
+    @Test func responseEnvelopeIncludesComputedSuccessAndNulls() throws {
+        let success = BaseApiResponse<MeResponse>()
+        let object = try JSONSerialization.jsonObject(with: MizonJSON.encoder().encode(success)) as! [String: Any]
+        #expect(object["isSuccess"] as? Bool == true)
+        #expect(object["content"] is NSNull); #expect(object["error"] is NSNull)
+        let failed = BaseApiResponse<MeResponse>(error: BaseApiError(code: 401, title: "Unauthorized"))
+        let failedObject = try JSONSerialization.jsonObject(with: MizonJSON.encoder().encode(failed)) as! [String: Any]
+        #expect(failedObject["isSuccess"] as? Bool == false)
+    }
+    @Test func whitespaceMediaCacheMetadataUsesSourceFallbacks() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID()
+        let downloader = MediaDownloader(cacheRoot: root)
+        let path = try await downloader.getCachedFilePath(MediaResponse(mediaPublicId: id, fileHash: " \t", fileName: "file", category: " \n"))
+        #expect(path.path.hasSuffix("/others/\(id.uuidString.lowercased())/file"))
+    }
+    @Test func namedEndpointNamespacesPreserveSourceMembers() {
+        let e = Endpoints(baseURL: URL(string: "https://example.com/api")!)
+        #expect(e.clients.login == e.url("Clients/Login"))
+        #expect(e.musics.musicStemMix == e.url("Musics/MusicStemMix"))
+        #expect(e.medias.media == e.url("Medias/Media"))
+        #expect(e.stories.list == e.url("Stories/Stories"))
+        #expect(e.search.global == e.url("Search/Global"))
+    }
+}
+
+private final class DripProtocol: URLProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stopped = false
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [:])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        tick(0)
+    }
+    private func tick(_ count: Int) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) { [self] in
+            lock.lock(); defer { lock.unlock() }
+            guard !stopped else { return }
+            if request.url!.path.contains("search") {
+                client?.urlProtocol(self, didLoad: Data("{\"itemType\":\"Music\"}\n".utf8))
+            } else { client?.urlProtocol(self, didLoad: Data(" ".utf8)) }
+            if count < 100 { tick(count + 1) }
+            else { client?.urlProtocolDidFinishLoading(self) }
+        }
+    }
+    override func stopLoading() { lock.lock(); stopped = true; lock.unlock() }
+}
+
+extension MizonAPITests {
+    private func dripSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [DripProtocol.self]
+        return URLSession(configuration: config)
+    }
+    @Test func httpBodyDeadlineIsNotResetByIncomingBytes() async throws {
+        let session = dripSession(); defer { session.invalidateAndCancel() }
+        let api = MizonApi(session: session)
+        var request = MizonApiRequest<MeRequest, MeResponse>(httpMethod: .GET, endpoint: URL(string: "https://example.com/body")!, apiRequest: MeRequest())
+        request.needAuthorized = false; request.callTimeoutDuration = 0.08
+        let clock = ContinuousClock.now
+        #expect(await api.sendRequest(request).error?.code == 106)
+        #expect(clock.duration(to: .now) < .seconds(1))
+    }
+    @Test func streamDeadlineIncludesTheWholeBody() async throws {
+        let session = dripSession(); defer { session.invalidateAndCancel() }
+        let api = MizonApi(session: session)
+        var request = MizonApiStreamRequest<GlobalSearchRequest, GlobalSearchItemResponse>(httpMethod: .GET, endpoint: URL(string: "https://example.com/search")!, apiRequest: GlobalSearchRequest())
+        request.needAuthorized = false; request.callTimeoutDuration = 0.08
+        var received = 0
+        do {
+            for try await _ in await api.sendStreamRequest(request) { received += 1 }
+            Issue.record("Expected streaming deadline")
+        } catch { #expect((error as? BaseApiError)?.code == 106) }
+        #expect(received < 100) // URLProtocol may buffer bytes until completion.
+    }
+    @Test func downloadSessionCancelsInFlightTransport() async throws {
+        let session = dripSession(); defer { session.invalidateAndCancel() }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let downloader = MediaDownloader(session: session, cacheRoot: root)
+        let control = DownloadSession()
+        let task = Task { try await downloader.downloadToCache(MediaResponse(chunkSize: 1000, fileName: "cancel.bin", fileSize: 1000), storageURL: URL(string: "https://example.com/body")!, session: control) }
+        try await Task.sleep(for: .milliseconds(30))
+        let clock = ContinuousClock.now
+        await control.cancel()
+        do { _ = try await task.value; Issue.record("Expected download cancellation") }
+        catch { #expect(error is CancellationError) }
+        #expect(clock.duration(to: .now) < .seconds(1))
+    }
+    @Test func slowDownloadConsumerDoesNotBufferAnEntireFile() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("source")
+        let bytes = Data((0..<100).map(UInt8.init)); try bytes.write(to: source)
+        let downloader = MediaDownloader(cacheRoot: root.appendingPathComponent("cache"))
+        let info = MediaResponse(chunkSize: 10, fileHash: "bounded", fileName: "file", fileSize: 100)
+        let final = try await downloader.getCachedFilePath(info)
+        let stream = await downloader.download(info, storageURL: source)
+        var iterator = stream.makeAsyncIterator()
+        var data = try await iterator.next()!.data
+        try await Task.sleep(for: .milliseconds(80))
+        let partialSize = try final.appendingPathExtension("part").resourceValues(forKeys: [.fileSizeKey]).fileSize!
+        #expect(partialSize <= 30)
+        while let chunk = try await iterator.next() { data.append(chunk.data) }
+        #expect(data == bytes)
+    }
+}

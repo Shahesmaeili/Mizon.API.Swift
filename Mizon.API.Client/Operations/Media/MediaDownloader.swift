@@ -8,6 +8,10 @@ public actor DownloadSession {
     public func pause() { isPaused = true }
     public func resume() { isPaused = false }
     public func cancel() { isCancelled = true }
+    func waitForCancellation() async throws {
+        while !isCancelled { try await Task.sleep(for: .milliseconds(50)) }
+        throw CancellationError()
+    }
     func checkpoint() async throws {
         repeat {
             try Task.checkCancellation()
@@ -48,15 +52,15 @@ public actor MediaDownloader {
             }
             return value
         }
-        let category = try component(info.category.isEmpty ? "others" : info.category)
-        let id = try component(info.fileHash.isEmpty ? info.mediaPublicId.uuidString.lowercased() : info.fileHash)
+        let category = try component(info.category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "others" : info.category)
+        let id = try component(info.fileHash.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? info.mediaPublicId.uuidString.lowercased() : info.fileHash)
         let name = try component(info.fileName)
         let folder = cacheRoot.appendingPathComponent(category).appendingPathComponent(id)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let final = folder.appendingPathComponent(name)
         // Symlink resolution prevents pre-existing cache symlinks from escaping the root.
         let root = cacheRoot.resolvingSymlinksInPath().path + "/"
         guard final.resolvingSymlinksInPath().path.hasPrefix(root) else { throw BaseApiError(code: 102, title: "Cache path escapes root") }
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return final
     }
     public func isCached(_ info: MediaResponse) throws -> Bool {
@@ -73,10 +77,15 @@ public actor MediaDownloader {
         return try getCachedFilePath(info)
     }
     public func download(_ info: MediaResponse, storageURL: URL, session: DownloadSession? = nil) -> AsyncThrowingStream<DownloadChunk, any Error> {
-        let (stream, continuation) = AsyncThrowingStream<DownloadChunk, any Error>.makeStream()
+        let (stream, continuation) = AsyncThrowingStream<DownloadChunk, any Error>.makeStream(bufferingPolicy: .bufferingOldest(1))
         let worker = Task {
             do {
-                try await self.performDownload(info, storageURL: storageURL, control: session, continuation: continuation)
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    group.addTask { try await self.performDownload(info, storageURL: storageURL, control: session, continuation: continuation) }
+                    if let session { group.addTask { try await session.waitForCancellation() } }
+                    defer { group.cancelAll() }
+                    try await group.next()
+                }
                 continuation.finish()
             } catch { continuation.finish(throwing: error) }
         }
@@ -94,8 +103,8 @@ public actor MediaDownloader {
         }
         let fileSize = storageURL.isFileURL ? Int64(try storageURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) : info.fileSize
         if let size = try? final.resourceValues(forKeys: [.fileSizeKey]).fileSize, Int64(size) == fileSize {
-            continuation.yield(DownloadChunk(data: Data(), chunkIndex: 0, totalDownloaded: fileSize,
-                instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true))
+            try await yield(DownloadChunk(data: Data(), chunkIndex: 0, totalDownloaded: fileSize,
+                instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
             return
         }
         let partial = final.appendingPathExtension("part")
@@ -151,15 +160,27 @@ public actor MediaDownloader {
             let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
             let last = position == fileSize
             if last { try promote(partial, to: final) }
-            continuation.yield(DownloadChunk(data: data, chunkIndex: index, totalDownloaded: position,
+            try await yield(DownloadChunk(data: data, chunkIndex: index, totalDownloaded: position,
                 instantaneousSpeedBytesPerSecond: seconds > 0 ? Double(data.count) / seconds : 0,
-                fileSize: fileSize, path: last ? final : partial, isLastChunk: last))
+                fileSize: fileSize, path: last ? final : partial, isLastChunk: last), to: continuation)
             index += 1
         }
         if FileManager.default.fileExists(atPath: partial.path) {
             try promote(partial, to: final)
-            continuation.yield(DownloadChunk(data: Data(), chunkIndex: index, totalDownloaded: fileSize,
-                instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true))
+            try await yield(DownloadChunk(data: Data(), chunkIndex: index, totalDownloaded: fileSize,
+                instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
+        }
+    }
+    private func yield(_ chunk: DownloadChunk, to continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
+        // Keep at most one chunk queued. A slow consumer must not buffer a whole file.
+        while true {
+            try Task.checkCancellation()
+            switch continuation.yield(chunk) {
+            case .enqueued: return
+            case .terminated: throw CancellationError()
+            case .dropped: try await Task.sleep(for: .milliseconds(10))
+            @unknown default: throw CancellationError()
+            }
         }
     }
     private func promote(_ partial: URL, to final: URL) throws {

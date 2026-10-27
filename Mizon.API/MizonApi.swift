@@ -41,7 +41,10 @@ public actor MizonApi {
                 response.isFromCache = true
                 return response
             }
-            let (data, rawResponse) = try await session.data(for: request)
+            let (data, rawResponse) = try await withRequestDeadline(seconds: descriptor.callTimeoutDuration) { [session] in
+                try await session.data(for: request)
+            }
+            try Task.checkCancellation()
             guard let http = rawResponse as? HTTPURLResponse else { throw BaseApiError(code: 107, title: "Invalid HTTP response") }
             if http.statusCode == 401 { return BaseApiResponse(error: BaseApiError(code: 401, title: "Unauthorized")) }
             let result = try MizonJSON.decoder().decode(BaseApiResponse<Response>.self, from: data)
@@ -111,7 +114,16 @@ public actor MizonApi {
             }
         }
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-        components.queryItems = (components.queryItems ?? []) + items
+        // ASP.NET query parsing treats a literal '+' as a space. URLQueryItem alone
+        // leaves '+' unescaped, unlike Uri.EscapeDataString in the .NET client.
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+        let encoded = items.map { item in
+            let name = item.name.addingPercentEncoding(withAllowedCharacters: allowed)!
+            return name + (item.value.map { "=" + $0.addingPercentEncoding(withAllowedCharacters: allowed)! } ?? "")
+        }.joined(separator: "&")
+        if !encoded.isEmpty {
+            components.percentEncodedQuery = [components.percentEncodedQuery, encoded].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "&")
+        }
         return components.url!
     }
     private func cacheKey(_ request: URLRequest) -> String {
@@ -130,14 +142,17 @@ public actor MizonApi {
                 guard descriptor.httpMethod == .GET else { throw BaseApiError(code: 108, title: "Stream requests require GET") }
                 var request = try self.authorizedRequest(endpoint: descriptor.endpoint, timeout: descriptor.callTimeoutDuration, needAuthorized: descriptor.needAuthorized)
                 request.url = try self.queryURL(descriptor.endpoint, content: descriptor.baseApiRequest.content)
-                let (bytes, response) = try await self.session.bytes(for: request)
-                guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                    throw BaseApiError(code: (response as? HTTPURLResponse)?.statusCode ?? 107, title: "Stream HTTP error")
-                }
-                for try await line in bytes.lines {
-                    try Task.checkCancellation()
-                    guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
-                    continuation.yield(try MizonJSON.decoder().decode(Response.self, from: Data(line.utf8)))
+                let streamRequest = request
+                try await withRequestDeadline(seconds: descriptor.callTimeoutDuration) { [session] in
+                    let (bytes, response) = try await session.bytes(for: streamRequest)
+                    guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                        throw BaseApiError(code: (response as? HTTPURLResponse)?.statusCode ?? 107, title: "Stream HTTP error")
+                    }
+                    for try await line in bytes.lines {
+                        try Task.checkCancellation()
+                        guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+                        continuation.yield(try MizonJSON.decoder().decode(Response.self, from: Data(line.utf8)))
+                    }
                 }
                 continuation.finish()
             } catch { continuation.finish(throwing: error) }

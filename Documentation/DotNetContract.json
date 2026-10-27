@@ -1,0 +1,1449 @@
+{
+  "revision": "5e7541aac20a64315e3985d166236068c243c624",
+  "models": [
+    {
+      "name": "LoginRequest",
+      "source": "Mizon.API.Client/Requests/Clients/LoginRequest.cs",
+      "properties": [
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "EmailAddress",
+          "type": "string?"
+        },
+        {
+          "name": "Password",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "LogoutRequest",
+      "source": "Mizon.API.Client/Requests/Clients/LogoutRequest.cs",
+      "properties": []
+    },
+    {
+      "name": "MeRequest",
+      "source": "Mizon.API.Client/Requests/Clients/MeRequest.cs",
+      "properties": []
+    },
+    {
+      "name": "MediaRequest",
+      "source": "Mizon.API.Client/Requests/Media/MediaRequest.cs",
+      "properties": [
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicAlbumMusicsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicAlbumMusicsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentCreateRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicCommentCreateRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Text",
+          "type": "string"
+        },
+        {
+          "name": "Timestamp",
+          "type": "TimeSpan?"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicCommentsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicContributorMusicsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicContributorMusicsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicContributorRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicContributorRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicFileRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicFileRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicFileWaveformRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicFileWaveformRequest.cs",
+      "properties": [
+        {
+          "name": "MusicFilePublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicGenreTypesRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicGenreTypesRequest.cs",
+      "properties": []
+    },
+    {
+      "name": "MusicLyricLineRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicLyricLineRequest.cs",
+      "properties": [
+        {
+          "name": "MusicLyricPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicLyricRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistCreateRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicPlaylistCreateRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistMembershipRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicPlaylistMembershipRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MusicPlaylistPublicIds",
+          "type": "List<Guid>"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicPlaylistsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicReactionRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MusicReactionTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Reacted",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionTypesRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicReactionTypesRequest.cs",
+      "properties": []
+    },
+    {
+      "name": "MusicReactionsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicReactionsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicStemMixRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicStemMixRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicViewRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicViewRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "GlobalSearchRequest",
+      "source": "Mizon.API.Client/Requests/Search/GlobalSearchRequest.cs",
+      "properties": [
+        {
+          "name": "Query",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicStoriesRequest",
+      "source": "Mizon.API.Client/Requests/Stories/MusicStoriesRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "StoriesRequest",
+      "source": "Mizon.API.Client/Requests/Stories/StoriesRequest.cs",
+      "properties": [
+        {
+          "name": "StoryPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "MusicPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "StoryCreateRequest",
+      "source": "Mizon.API.Client/Requests/Stories/StoryCreateRequest.cs",
+      "properties": [
+        {
+          "name": "ContentMediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PreviewMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "StoryContentTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string?"
+        },
+        {
+          "name": "ExpireDateTime",
+          "type": "DateTimeOffset?"
+        },
+        {
+          "name": "Widgets",
+          "type": "List<StoryWidgetCreateRequest>"
+        }
+      ]
+    },
+    {
+      "name": "StoryWidgetCreateRequest",
+      "source": "Mizon.API.Client/Requests/Stories/StoryCreateRequest.cs",
+      "properties": [
+        {
+          "name": "StoryWidgetTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "StoryWidgetStylePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "X",
+          "type": "float"
+        },
+        {
+          "name": "Y",
+          "type": "float"
+        },
+        {
+          "name": "Width",
+          "type": "float"
+        },
+        {
+          "name": "Height",
+          "type": "float"
+        },
+        {
+          "name": "Rotation",
+          "type": "float"
+        },
+        {
+          "name": "ZIndex",
+          "type": "short"
+        },
+        {
+          "name": "MusicPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ClientPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "StoryLikeRequest",
+      "source": "Mizon.API.Client/Requests/Stories/StoryLikeRequest.cs",
+      "properties": [
+        {
+          "name": "StoryPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Liked",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "StoryRequest",
+      "source": "Mizon.API.Client/Requests/Stories/StoryRequest.cs",
+      "properties": [
+        {
+          "name": "StoryPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "LoginResponse",
+      "source": "Mizon.API.Client/Responses/Clients/LoginResponse.cs",
+      "properties": [
+        {
+          "name": "AccessToken",
+          "type": "string"
+        },
+        {
+          "name": "RefreshToken",
+          "type": "string"
+        },
+        {
+          "name": "SessionPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "LogoutResponse",
+      "source": "Mizon.API.Client/Responses/Clients/LogoutResponse.cs",
+      "properties": []
+    },
+    {
+      "name": "MeResponse",
+      "source": "Mizon.API.Client/Responses/Clients/MeResponse.cs",
+      "properties": [
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "NickName",
+          "type": "string?"
+        },
+        {
+          "name": "EmailAddress",
+          "type": "string"
+        },
+        {
+          "name": "EmailAddressIsVerified",
+          "type": "bool"
+        },
+        {
+          "name": "MeProfile",
+          "type": "MeProfileResponse?"
+        }
+      ]
+    },
+    {
+      "name": "MeProfileResponse",
+      "source": "Mizon.API.Client/Responses/Clients/MeResponse.cs",
+      "properties": [
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FileSize",
+          "type": "long"
+        },
+        {
+          "name": "Blurhash",
+          "type": "string"
+        },
+        {
+          "name": "Width",
+          "type": "short"
+        },
+        {
+          "name": "Height",
+          "type": "short"
+        },
+        {
+          "name": "PrimaryAccentColor",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MediaResponse",
+      "source": "Mizon.API.Client/Responses/Media/MediaResponse.cs",
+      "properties": [
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "TotalChunks",
+          "type": "int"
+        },
+        {
+          "name": "ChunkSize",
+          "type": "int"
+        },
+        {
+          "name": "FileHash",
+          "type": "string"
+        },
+        {
+          "name": "FileName",
+          "type": "string"
+        },
+        {
+          "name": "FileSize",
+          "type": "long"
+        },
+        {
+          "name": "StoragePath",
+          "type": "string"
+        },
+        {
+          "name": "Category",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentCreateResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentCreateResponse.cs",
+      "properties": [
+        {
+          "name": "MusicCommentPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentsResponse.cs",
+      "properties": [
+        {
+          "name": "MusicComments",
+          "type": "List<MusicCommentItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentsResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Text",
+          "type": "string"
+        },
+        {
+          "name": "Timestamp",
+          "type": "TimeSpan?"
+        },
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicContributorsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicContributorsResponse.cs",
+      "properties": [
+        {
+          "name": "Contributors",
+          "type": "List<MusicContributorItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicContributorItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicContributorsResponse.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "MusicContributorTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MusicContributorTypeTitle",
+          "type": "string"
+        },
+        {
+          "name": "MusicContributorTypePersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicFileResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFileResponse.cs",
+      "properties": [
+        {
+          "name": "MusicFilePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "TotalChunks",
+          "type": "int"
+        },
+        {
+          "name": "ChunkSize",
+          "type": "int"
+        },
+        {
+          "name": "FileHash",
+          "type": "string"
+        },
+        {
+          "name": "FileName",
+          "type": "string"
+        },
+        {
+          "name": "FileSize",
+          "type": "long"
+        },
+        {
+          "name": "StoragePath",
+          "type": "string"
+        },
+        {
+          "name": "Duration",
+          "type": "TimeSpan"
+        }
+      ]
+    },
+    {
+      "name": "MusicFileWaveformResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFileWaveformResponse.cs",
+      "properties": [
+        {
+          "name": "Waveforms",
+          "type": "List<WaveformResponse>"
+        },
+        {
+          "name": "LightingProfile",
+          "type": "MusicLightingProfileResponse"
+        }
+      ]
+    },
+    {
+      "name": "MusicLightingProfileResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFileWaveformResponse.cs",
+      "properties": [
+        {
+          "name": "PrimaryColor",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "WaveformResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFileWaveformResponse.cs",
+      "properties": [
+        {
+          "name": "OffsetInMilliseconds",
+          "type": "int"
+        },
+        {
+          "name": "MinimumAmplitude",
+          "type": "short"
+        },
+        {
+          "name": "MaximumAmplitude",
+          "type": "short"
+        },
+        {
+          "name": "RMS",
+          "type": "float"
+        },
+        {
+          "name": "Peak",
+          "type": "short"
+        },
+        {
+          "name": "Transient",
+          "type": "float"
+        },
+        {
+          "name": "IsClipping",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "MusicGenreTypesResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicGenreTypesResponse.cs",
+      "properties": [
+        {
+          "name": "MusicGenreTypes",
+          "type": "List<MusicGenreTypeItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicGenreTypeItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicGenreTypesResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "AccentColorHex",
+          "type": "string"
+        },
+        {
+          "name": "IconSymbol",
+          "type": "string"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricLineResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLyricLineResponse.cs",
+      "properties": [
+        {
+          "name": "MusicLyricLines",
+          "type": "List<MusicLyricLineItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricLineItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLyricLineResponse.cs",
+      "properties": [
+        {
+          "name": "StartTimeInMilliseconds",
+          "type": "int"
+        },
+        {
+          "name": "EndTimeInMilliseconds",
+          "type": "int"
+        },
+        {
+          "name": "LineOrder",
+          "type": "int"
+        },
+        {
+          "name": "Text",
+          "type": "string"
+        },
+        {
+          "name": "MusicLyricLineWords",
+          "type": "List<MusicLyricLineWordResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricLineWordResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLyricLineResponse.cs",
+      "properties": [
+        {
+          "name": "StartTimeInMilliseconds",
+          "type": "int"
+        },
+        {
+          "name": "EndTimeInMilliseconds",
+          "type": "int"
+        },
+        {
+          "name": "WordOrder",
+          "type": "int"
+        },
+        {
+          "name": "Text",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLyricResponse.cs",
+      "properties": [
+        {
+          "name": "MusicLyricLanguages",
+          "type": "List<MusicLyricLanguageResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicLyricLanguageResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLyricResponse.cs",
+      "properties": [
+        {
+          "name": "MusicLyricPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "LanguagePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "LanguageTitle",
+          "type": "string"
+        },
+        {
+          "name": "LanguagePersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistCreateResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlaylistCreateResponse.cs",
+      "properties": [
+        {
+          "name": "MusicPlaylistPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistMembershipResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlaylistMembershipResponse.cs",
+      "properties": []
+    },
+    {
+      "name": "MusicPlaylistsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlaylistsResponse.cs",
+      "properties": [
+        {
+          "name": "MusicPlaylists",
+          "type": "List<MusicPlaylistListItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistListItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlaylistsResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        },
+        {
+          "name": "LastMusicCoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ContainsCurrentMusic",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicReactionResponse.cs",
+      "properties": []
+    },
+    {
+      "name": "MusicReactionTypesResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicReactionTypesResponse.cs",
+      "properties": [
+        {
+          "name": "MusicReactionTypes",
+          "type": "List<MusicReactionTypeItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionTypeItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicReactionTypesResponse.cs",
+      "properties": [
+        {
+          "name": "Emoji",
+          "type": "string"
+        },
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicReactionsResponse.cs",
+      "properties": [
+        {
+          "name": "MusicReactionItems",
+          "type": "List<MusicReactionItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicReactionItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicReactionsResponse.cs",
+      "properties": [
+        {
+          "name": "Emoji",
+          "type": "string"
+        },
+        {
+          "name": "Count",
+          "type": "int"
+        },
+        {
+          "name": "ReactedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "MusicReactionTypePublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "ReleaseDateTime",
+          "type": "DateTimeOffset?"
+        },
+        {
+          "name": "LikedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        },
+        {
+          "name": "ViewsCount",
+          "type": "int"
+        },
+        {
+          "name": "MusicLanguages",
+          "type": "List<MusicLanguageResponse>"
+        },
+        {
+          "name": "MusicGenres",
+          "type": "List<MusicGenreResponse>"
+        },
+        {
+          "name": "MusicAlbum",
+          "type": "MusicAlbumResponse?"
+        },
+        {
+          "name": "MusicLabel",
+          "type": "MusicLabelResponse?"
+        },
+        {
+          "name": "MusicCover",
+          "type": "MusicCoverResponse?"
+        }
+      ]
+    },
+    {
+      "name": "MusicLanguageResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicAlbumResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicLabelResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicGenreResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicCoverResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FileSize",
+          "type": "long"
+        },
+        {
+          "name": "Blurhash",
+          "type": "string"
+        },
+        {
+          "name": "Width",
+          "type": "short"
+        },
+        {
+          "name": "Height",
+          "type": "short"
+        },
+        {
+          "name": "PrimaryAccentColor",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicStemMixResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicStemMixResponse.cs",
+      "properties": [
+        {
+          "name": "IsAvailable",
+          "type": "bool"
+        },
+        {
+          "name": "MusicFilePublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "VocalsMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "InstrumentalMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "MusicTabMusicsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicTabMusicsResponse.cs",
+      "properties": [
+        {
+          "name": "Musics",
+          "type": "List<MusicTabMusicItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicTabMusicItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicTabMusicsResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "Contributors",
+          "type": "List<MusicTabContributorItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicTabContributorItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicTabMusicsResponse.cs",
+      "properties": [
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicViewResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicViewResponse.cs",
+      "properties": []
+    },
+    {
+      "name": "GlobalSearchItemResponse",
+      "source": "Mizon.API.Client/Responses/Search/GlobalSearchItemResponse.cs",
+      "properties": [
+        {
+          "name": "ItemType",
+          "type": "string"
+        },
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "FirstName",
+          "type": "string?"
+        },
+        {
+          "name": "LastName",
+          "type": "string?"
+        },
+        {
+          "name": "NickName",
+          "type": "string?"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "Title",
+          "type": "string?"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "StoriesResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "Stories",
+          "type": "List<StoryListItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "StoryListItemResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "CreatorFirstName",
+          "type": "string"
+        },
+        {
+          "name": "CreatorLastName",
+          "type": "string"
+        },
+        {
+          "name": "CreatorProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "PreviewMediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string?"
+        },
+        {
+          "name": "ViewedByMe",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "StoryResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "CreatorClientPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "CreatorFirstName",
+          "type": "string"
+        },
+        {
+          "name": "CreatorLastName",
+          "type": "string"
+        },
+        {
+          "name": "CreatorUsername",
+          "type": "string?"
+        },
+        {
+          "name": "CreatorProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "StoryContentTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "StoryContentTypeTitle",
+          "type": "string"
+        },
+        {
+          "name": "StoryContentTypePersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "ContentMediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PreviewMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "Title",
+          "type": "string?"
+        },
+        {
+          "name": "ExpireDateTime",
+          "type": "DateTimeOffset?"
+        },
+        {
+          "name": "ViewedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "LikedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "ViewsCount",
+          "type": "int"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        },
+        {
+          "name": "Widgets",
+          "type": "List<StoryWidgetResponse>"
+        }
+      ]
+    },
+    {
+      "name": "StoryWidgetResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "StoryWidgetTypePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "StoryWidgetStylePublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "X",
+          "type": "float"
+        },
+        {
+          "name": "Y",
+          "type": "float"
+        },
+        {
+          "name": "Width",
+          "type": "float"
+        },
+        {
+          "name": "Height",
+          "type": "float"
+        },
+        {
+          "name": "Rotation",
+          "type": "float"
+        },
+        {
+          "name": "ZIndex",
+          "type": "short"
+        },
+        {
+          "name": "Music",
+          "type": "StoryMusicWidgetResponse?"
+        },
+        {
+          "name": "Client",
+          "type": "StoryClientWidgetResponse?"
+        }
+      ]
+    },
+    {
+      "name": "StoryMusicWidgetResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "StoryClientWidgetResponse",
+      "source": "Mizon.API.Client/Responses/Stories/StoryResponse.cs",
+      "properties": [
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    }
+  ]
+}

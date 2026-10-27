@@ -128,9 +128,13 @@ Swift uses structs/protocols and lowerCamelCase properties instead of C# classes
 
 ```sh
 swift test
+# Optional: compare a local .NET source checkout
+python3 Scripts/audit-dotnet.py /path/to/Mizon.API.DotNet
 ./Scripts/validate-apple.sh
 ```
 
-Local validation used **Apple Swift 6.4 / Xcode 27.1**: 14 tests passed, plus compilation for macOS, iOS arm64 and watchOS arm64_32/arm64. CI requests Swift 6.4.1. Tests cover every operation's route/method, wire JSON, .NET TimeSpan bounds, gzip/deflate, auth/cache isolation and expiration, errors, NDJSON search, resumed/ranged downloads, cancellation, socket lifecycle and presence decoding.
+Local validation used **Apple Swift 6.4 / Xcode 27.1**: 24 tests passed, plus compilation for macOS, iOS arm64 and watchOS arm64_32/arm64. CI requests Swift 6.4.1. Tests cover every operation's route/method, wire JSON, .NET TimeSpan bounds, gzip/deflate, auth/cache isolation and expiration, errors, NDJSON search, resumed/ranged downloads, cancellation, socket lifecycle and presence decoding.
 
 No live backend address or test account was supplied. Authentication against a deployed server, real hub reconnection and on-device runtime behavior still require integration testing with your backend. watchOS builds successfully with the official dependency; network/background execution remains subject to Apple's app lifecycle rules.
+
+The follow-up parity audit is recorded in [Documentation/Audit.md](Documentation/Audit.md). It includes a typed contract snapshot and round-trip fixtures for all 78 DTO types.

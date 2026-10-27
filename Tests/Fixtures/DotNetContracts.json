@@ -1,0 +1,599 @@
+{
+  "LoginRequest": {
+    "username": "فارسی + & value",
+    "emailAddress": "فارسی + & value",
+    "password": "فارسی + & value"
+  },
+  "LogoutRequest": {},
+  "MeRequest": {},
+  "MediaRequest": {
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicAlbumMusicsRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicCommentCreateRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "text": "فارسی + & value",
+    "timestamp": "1.02:03:04.1234567"
+  },
+  "MusicCommentsRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicContributorMusicsRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicContributorRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicFileRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicFileWaveformRequest": {
+    "musicFilePublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicGenreTypesRequest": {},
+  "MusicLyricLineRequest": {
+    "musicLyricPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicLyricRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicPlaylistCreateRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value"
+  },
+  "MusicPlaylistMembershipRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicPlaylistPublicIds": [
+      "12345678-1234-1234-1234-123456789abc"
+    ]
+  },
+  "MusicPlaylistsRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicReactionRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicReactionTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "reacted": true
+  },
+  "MusicReactionTypesRequest": {},
+  "MusicReactionsRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicStemMixRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicViewRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "GlobalSearchRequest": {
+    "query": "فارسی + & value"
+  },
+  "MusicStoriesRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "StoriesRequest": {
+    "storyPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "StoryCreateRequest": {
+    "contentMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyContentTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "expireDateTime": "2026-10-26T12:00:00.125Z",
+    "widgets": [
+      {
+        "storyWidgetTypePublicId": "12345678-1234-1234-1234-123456789abc",
+        "storyWidgetStylePublicId": "12345678-1234-1234-1234-123456789abc",
+        "x": 0.5,
+        "y": 0.5,
+        "width": 0.5,
+        "height": 0.5,
+        "rotation": 0.5,
+        "zIndex": 1234,
+        "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+        "clientPublicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
+  },
+  "StoryWidgetCreateRequest": {
+    "storyWidgetTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyWidgetStylePublicId": "12345678-1234-1234-1234-123456789abc",
+    "x": 0.5,
+    "y": 0.5,
+    "width": 0.5,
+    "height": 0.5,
+    "rotation": 0.5,
+    "zIndex": 1234,
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "StoryLikeRequest": {
+    "storyPublicId": "12345678-1234-1234-1234-123456789abc",
+    "liked": true
+  },
+  "StoryRequest": {
+    "storyPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "LoginResponse": {
+    "accessToken": "فارسی + & value",
+    "refreshToken": "فارسی + & value",
+    "sessionPublicId": "12345678-1234-1234-1234-123456789abc",
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "LogoutResponse": {},
+  "MeResponse": {
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value",
+    "username": "فارسی + & value",
+    "nickName": "فارسی + & value",
+    "emailAddress": "فارسی + & value",
+    "emailAddressIsVerified": true,
+    "meProfile": {
+      "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "fileSize": 4294967297,
+      "blurhash": "فارسی + & value",
+      "width": 1234,
+      "height": 1234,
+      "primaryAccentColor": "فارسی + & value"
+    }
+  },
+  "MeProfileResponse": {
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "fileSize": 4294967297,
+    "blurhash": "فارسی + & value",
+    "width": 1234,
+    "height": 1234,
+    "primaryAccentColor": "فارسی + & value"
+  },
+  "MediaResponse": {
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "totalChunks": 123456,
+    "chunkSize": 123456,
+    "fileHash": "فارسی + & value",
+    "fileName": "فارسی + & value",
+    "fileSize": 4294967297,
+    "storagePath": "فارسی + & value",
+    "category": "فارسی + & value"
+  },
+  "MusicCommentCreateResponse": {
+    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicCommentsResponse": {
+    "musicComments": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "text": "فارسی + & value",
+        "timestamp": "1.02:03:04.1234567",
+        "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+        "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "firstName": "فارسی + & value",
+        "lastName": "فارسی + & value",
+        "username": "فارسی + & value"
+      }
+    ]
+  },
+  "MusicCommentItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "text": "فارسی + & value",
+    "timestamp": "1.02:03:04.1234567",
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value",
+    "username": "فارسی + & value"
+  },
+  "MusicContributorsResponse": {
+    "contributors": [
+      {
+        "personPublicId": "12345678-1234-1234-1234-123456789abc",
+        "firstName": "فارسی + & value",
+        "lastName": "فارسی + & value",
+        "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "musicContributorTypePublicId": "12345678-1234-1234-1234-123456789abc",
+        "musicContributorTypeTitle": "فارسی + & value",
+        "musicContributorTypePersianTitle": "فارسی + & value"
+      }
+    ]
+  },
+  "MusicContributorItemResponse": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicContributorTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicContributorTypeTitle": "فارسی + & value",
+    "musicContributorTypePersianTitle": "فارسی + & value"
+  },
+  "MusicFileResponse": {
+    "musicFilePublicId": "12345678-1234-1234-1234-123456789abc",
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "totalChunks": 123456,
+    "chunkSize": 123456,
+    "fileHash": "فارسی + & value",
+    "fileName": "فارسی + & value",
+    "fileSize": 4294967297,
+    "storagePath": "فارسی + & value",
+    "duration": "1.02:03:04.1234567"
+  },
+  "MusicFileWaveformResponse": {
+    "waveforms": [
+      {
+        "offsetInMilliseconds": 123456,
+        "minimumAmplitude": 1234,
+        "maximumAmplitude": 1234,
+        "rms": 0.5,
+        "peak": 1234,
+        "transient": 0.5,
+        "isClipping": true
+      }
+    ],
+    "lightingProfile": {
+      "primaryColor": "فارسی + & value"
+    }
+  },
+  "MusicLightingProfileResponse": {
+    "primaryColor": "فارسی + & value"
+  },
+  "WaveformResponse": {
+    "offsetInMilliseconds": 123456,
+    "minimumAmplitude": 1234,
+    "maximumAmplitude": 1234,
+    "rms": 0.5,
+    "peak": 1234,
+    "transient": 0.5,
+    "isClipping": true
+  },
+  "MusicGenreTypesResponse": {
+    "musicGenreTypes": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "persianTitle": "فارسی + & value",
+        "accentColorHex": "فارسی + & value",
+        "iconSymbol": "فارسی + & value",
+        "musicsCount": 123456
+      }
+    ]
+  },
+  "MusicGenreTypeItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value",
+    "accentColorHex": "فارسی + & value",
+    "iconSymbol": "فارسی + & value",
+    "musicsCount": 123456
+  },
+  "MusicLyricLineResponse": {
+    "musicLyricLines": [
+      {
+        "startTimeInMilliseconds": 123456,
+        "endTimeInMilliseconds": 123456,
+        "lineOrder": 123456,
+        "text": "فارسی + & value",
+        "musicLyricLineWords": [
+          {
+            "startTimeInMilliseconds": 123456,
+            "endTimeInMilliseconds": 123456,
+            "wordOrder": 123456,
+            "text": "فارسی + & value"
+          }
+        ]
+      }
+    ]
+  },
+  "MusicLyricLineItemResponse": {
+    "startTimeInMilliseconds": 123456,
+    "endTimeInMilliseconds": 123456,
+    "lineOrder": 123456,
+    "text": "فارسی + & value",
+    "musicLyricLineWords": [
+      {
+        "startTimeInMilliseconds": 123456,
+        "endTimeInMilliseconds": 123456,
+        "wordOrder": 123456,
+        "text": "فارسی + & value"
+      }
+    ]
+  },
+  "MusicLyricLineWordResponse": {
+    "startTimeInMilliseconds": 123456,
+    "endTimeInMilliseconds": 123456,
+    "wordOrder": 123456,
+    "text": "فارسی + & value"
+  },
+  "MusicLyricResponse": {
+    "musicLyricLanguages": [
+      {
+        "musicLyricPublicId": "12345678-1234-1234-1234-123456789abc",
+        "languagePublicId": "12345678-1234-1234-1234-123456789abc",
+        "languageTitle": "فارسی + & value",
+        "languagePersianTitle": "فارسی + & value"
+      }
+    ]
+  },
+  "MusicLyricLanguageResponse": {
+    "musicLyricPublicId": "12345678-1234-1234-1234-123456789abc",
+    "languagePublicId": "12345678-1234-1234-1234-123456789abc",
+    "languageTitle": "فارسی + & value",
+    "languagePersianTitle": "فارسی + & value"
+  },
+  "MusicPlaylistCreateResponse": {
+    "musicPlaylistPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicPlaylistMembershipResponse": {},
+  "MusicPlaylistsResponse": {
+    "musicPlaylists": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "musicsCount": 123456,
+        "lastMusicCoverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "containsCurrentMusic": true
+      }
+    ]
+  },
+  "MusicPlaylistListItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "musicsCount": 123456,
+    "lastMusicCoverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "containsCurrentMusic": true
+  },
+  "MusicReactionResponse": {},
+  "MusicReactionTypesResponse": {
+    "musicReactionTypes": [
+      {
+        "emoji": "فارسی + & value",
+        "publicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
+  },
+  "MusicReactionTypeItemResponse": {
+    "emoji": "فارسی + & value",
+    "publicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicReactionsResponse": {
+    "musicReactionItems": [
+      {
+        "emoji": "فارسی + & value",
+        "count": 123456,
+        "reactedByMe": true,
+        "musicReactionTypePublicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
+  },
+  "MusicReactionItemResponse": {
+    "emoji": "فارسی + & value",
+    "count": 123456,
+    "reactedByMe": true,
+    "musicReactionTypePublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicResponse": {
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value",
+    "releaseDateTime": "2026-10-26T12:00:00.125Z",
+    "likedByMe": true,
+    "likesCount": 123456,
+    "viewsCount": 123456,
+    "musicLanguages": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "persianTitle": "فارسی + & value"
+      }
+    ],
+    "musicGenres": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "persianTitle": "فارسی + & value"
+      }
+    ],
+    "musicAlbum": {
+      "publicId": "12345678-1234-1234-1234-123456789abc",
+      "title": "فارسی + & value",
+      "persianTitle": "فارسی + & value"
+    },
+    "musicLabel": {
+      "publicId": "12345678-1234-1234-1234-123456789abc",
+      "title": "فارسی + & value",
+      "persianTitle": "فارسی + & value"
+    },
+    "musicCover": {
+      "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "fileSize": 4294967297,
+      "blurhash": "فارسی + & value",
+      "width": 1234,
+      "height": 1234,
+      "primaryAccentColor": "فارسی + & value"
+    }
+  },
+  "MusicLanguageResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value"
+  },
+  "MusicAlbumResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value"
+  },
+  "MusicLabelResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value"
+  },
+  "MusicGenreResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value"
+  },
+  "MusicCoverResponse": {
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "fileSize": 4294967297,
+    "blurhash": "فارسی + & value",
+    "width": 1234,
+    "height": 1234,
+    "primaryAccentColor": "فارسی + & value"
+  },
+  "MusicStemMixResponse": {
+    "isAvailable": true,
+    "musicFilePublicId": "12345678-1234-1234-1234-123456789abc",
+    "vocalsMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "instrumentalMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicTabMusicsResponse": {
+    "musics": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "persianTitle": "فارسی + & value",
+        "likesCount": 123456,
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "contributors": [
+          {
+            "firstName": "فارسی + & value",
+            "lastName": "فارسی + & value"
+          }
+        ]
+      }
+    ]
+  },
+  "MusicTabMusicItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value",
+    "likesCount": 123456,
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "contributors": [
+      {
+        "firstName": "فارسی + & value",
+        "lastName": "فارسی + & value"
+      }
+    ]
+  },
+  "MusicTabContributorItemResponse": {
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value"
+  },
+  "MusicViewResponse": {},
+  "GlobalSearchItemResponse": {
+    "itemType": "فارسی + & value",
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "username": "فارسی + & value",
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value",
+    "nickName": "فارسی + & value",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "persianTitle": "فارسی + & value",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "StoriesResponse": {
+    "stories": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "creatorFirstName": "فارسی + & value",
+        "creatorLastName": "فارسی + & value",
+        "creatorProfileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "فارسی + & value",
+        "viewedByMe": true
+      }
+    ]
+  },
+  "StoryListItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "creatorFirstName": "فارسی + & value",
+    "creatorLastName": "فارسی + & value",
+    "creatorProfileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "viewedByMe": true
+  },
+  "StoryResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "creatorClientPublicId": "12345678-1234-1234-1234-123456789abc",
+    "creatorFirstName": "فارسی + & value",
+    "creatorLastName": "فارسی + & value",
+    "creatorUsername": "فارسی + & value",
+    "creatorProfileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyContentTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyContentTypeTitle": "فارسی + & value",
+    "storyContentTypePersianTitle": "فارسی + & value",
+    "contentMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "expireDateTime": "2026-10-26T12:00:00.125Z",
+    "viewedByMe": true,
+    "likedByMe": true,
+    "viewsCount": 123456,
+    "likesCount": 123456,
+    "widgets": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "storyWidgetTypePublicId": "12345678-1234-1234-1234-123456789abc",
+        "storyWidgetStylePublicId": "12345678-1234-1234-1234-123456789abc",
+        "x": 0.5,
+        "y": 0.5,
+        "width": 0.5,
+        "height": 0.5,
+        "rotation": 0.5,
+        "zIndex": 1234,
+        "music": {
+          "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+          "title": "فارسی + & value",
+          "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+        },
+        "client": {
+          "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+          "firstName": "فارسی + & value",
+          "lastName": "فارسی + & value",
+          "username": "فارسی + & value",
+          "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+        }
+      }
+    ]
+  },
+  "StoryWidgetResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "storyWidgetTypePublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyWidgetStylePublicId": "12345678-1234-1234-1234-123456789abc",
+    "x": 0.5,
+    "y": 0.5,
+    "width": 0.5,
+    "height": 0.5,
+    "rotation": 0.5,
+    "zIndex": 1234,
+    "music": {
+      "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+      "title": "فارسی + & value",
+      "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+    },
+    "client": {
+      "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+      "firstName": "فارسی + & value",
+      "lastName": "فارسی + & value",
+      "username": "فارسی + & value",
+      "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+    }
+  },
+  "StoryMusicWidgetResponse": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "فارسی + & value",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "StoryClientWidgetResponse": {
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "فارسی + & value",
+    "lastName": "فارسی + & value",
+    "username": "فارسی + & value",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  }
+}
