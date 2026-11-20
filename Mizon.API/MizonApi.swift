@@ -92,6 +92,8 @@ public actor MizonApi {
     private func authorizedRequest(endpoint: URL, timeout: TimeInterval, needAuthorized: Bool) throws -> URLRequest {
         guard timeout > 0, timeout.isFinite else { throw BaseApiError(code: 108, title: "Invalid timeout") }
         var request = URLRequest(url: endpoint, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
+        // Match .NET's HTTP/3 preference with fallback to the available TCP protocol.
+        request.assumesHTTP3Capable = endpoint.scheme?.lowercased() == "https"
         if needAuthorized {
             guard let token, !token.isEmpty else { throw BaseApiError(code: 401, title: "This method needs authorization") }
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

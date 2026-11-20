@@ -118,6 +118,19 @@ struct MizonAPITests {
             #expect(output.prefix(Int(z.total_out)) == source)
         }
     }
+    @Test func transportPrefersHTTP3ForSecureAPIEndpoints() async throws {
+        let api = MizonApi()
+        try await api.setToken("test-only")
+        let secure = Endpoints(baseURL: URL(string: "https://example.com")!)
+        let plaintext = Endpoints(baseURL: URL(string: "http://localhost")!)
+        let get = try await api.makeRequest(MeOperation(.init(), endpoints: secure).apiRequest)
+        let post = try await api.makeRequest(LoginOperation(.init(), endpoints: secure).apiRequest)
+        let local = try await api.makeRequest(MeOperation(.init(), endpoints: plaintext).apiRequest)
+        #expect(get.assumesHTTP3Capable)
+        #expect(post.assumesHTTP3Capable)
+        #expect(!local.assumesHTTP3Capable)
+    }
+
     @Test func transportSendsApplicationLanguage() async throws {
         let api = MizonApi(languageProvider: { "fa-IR" })
         try await api.setToken("test-only")

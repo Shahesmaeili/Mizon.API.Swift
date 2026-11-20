@@ -30,6 +30,8 @@ Choose branch `main`, then add `MizonAPI` and `MizonAPIClient` to your macOS, iO
 
 ## Use
 
+HTTPS API requests, including streaming requests, ask URLSession to try HTTP/3 on the first transaction. URLSession can fall back to HTTP/2 or HTTP/1.1 when QUIC is unavailable. Verify the protocol negotiated by a live request with `URLSessionTaskMetrics`.
+
 ```swift
 import Foundation
 import MizonAPI
