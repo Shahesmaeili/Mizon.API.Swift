@@ -35,6 +35,21 @@ public enum MizonJSON {
         return decoder
     }
     private static let canonicalKeys: [String: String] = [
+        "vote": "vote",
+        "type": "type",
+        "timedonly": "timedOnly",
+        "tags": "tags",
+        "sort": "sort",
+        "replies": "replies",
+        "platform": "platform",
+        "parentmusiccommentpublicid": "parentMusicCommentPublicId",
+        "next": "next",
+        "navigationpublicid": "navigationPublicId",
+        "myvote": "myVote",
+        "likes": "likes",
+        "label": "label",
+        "dislikes": "dislikes",
+        "after": "after",
         "accentcolor": "accentColor",
         "activities": "activities",
         "activityid": "activityId",

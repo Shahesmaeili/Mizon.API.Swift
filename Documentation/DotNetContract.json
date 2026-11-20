@@ -1,5 +1,5 @@
 {
-  "revision": "35c9b294dbe628367b8f3de64f9e2ba363cb3101",
+  "revision": "bce141724e967c9bf35342d0a78765d0d3613761",
   "models": [
     {
       "name": "LoginRequest",
@@ -64,6 +64,14 @@
         {
           "name": "Timestamp",
           "type": "TimeSpan?"
+        },
+        {
+          "name": "ParentMusicCommentPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "Tags",
+          "type": "List<MusicCommentTagRequest>?"
         }
       ]
     },
@@ -78,6 +86,26 @@
         {
           "name": "MusicCommentPublicId",
           "type": "Guid?"
+        },
+        {
+          "name": "ParentMusicCommentPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "After",
+          "type": "Guid?"
+        },
+        {
+          "name": "PageSize",
+          "type": "int?"
+        },
+        {
+          "name": "Sort",
+          "type": "string?"
+        },
+        {
+          "name": "TimedOnly",
+          "type": "bool?"
         }
       ]
     },
@@ -531,6 +559,10 @@
         {
           "name": "MusicComments",
           "type": "List<MusicCommentItemResponse>"
+        },
+        {
+          "name": "Next",
+          "type": "Guid?"
         }
       ]
     },
@@ -569,6 +601,38 @@
         {
           "name": "Username",
           "type": "string?"
+        },
+        {
+          "name": "ParentMusicCommentPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "CreateDateTime",
+          "type": "DateTimeOffset"
+        },
+        {
+          "name": "Platform",
+          "type": "string?"
+        },
+        {
+          "name": "Replies",
+          "type": "int"
+        },
+        {
+          "name": "Likes",
+          "type": "int"
+        },
+        {
+          "name": "Dislikes",
+          "type": "int"
+        },
+        {
+          "name": "MyVote",
+          "type": "int"
+        },
+        {
+          "name": "Tags",
+          "type": "List<MusicCommentTagItem>"
         }
       ]
     },
@@ -2326,6 +2390,102 @@
         {
           "name": "CanFollow",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentTagRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicCommentCreateRequest.cs",
+      "properties": [
+        {
+          "name": "Type",
+          "type": "string"
+        },
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentTagSearchRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicCommentTagSearchRequest.cs",
+      "properties": [
+        {
+          "name": "Type",
+          "type": "string"
+        },
+        {
+          "name": "Query",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentVoteRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicCommentVoteRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MusicCommentPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Vote",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentTagSearchResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentTagSearchResponse.cs",
+      "properties": [
+        {
+          "name": "Tags",
+          "type": "List<MusicCommentTagItem>"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentVoteResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentVoteResponse.cs",
+      "properties": [
+        {
+          "name": "Likes",
+          "type": "int"
+        },
+        {
+          "name": "Dislikes",
+          "type": "int"
+        },
+        {
+          "name": "MyVote",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MusicCommentTagItem",
+      "source": "Mizon.API.Client/Responses/Musics/MusicCommentsResponse.cs",
+      "properties": [
+        {
+          "name": "Type",
+          "type": "string"
+        },
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Label",
+          "type": "string"
+        },
+        {
+          "name": "NavigationPublicId",
+          "type": "Guid?"
         }
       ]
     }

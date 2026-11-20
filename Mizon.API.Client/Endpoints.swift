@@ -38,6 +38,8 @@ public struct Endpoints: Sendable {
         public var musicAlbumMusics: URL { endpoints.url("Musics/MusicAlbumMusics") }
         public var musicContributorMusics: URL { endpoints.url("Musics/MusicContributorMusics") }
         public var musicComments: URL { endpoints.url("Musics/MusicComments") }
+        public var musicCommentTagSearch: URL { endpoints.url("Musics/MusicCommentTagSearch") }
+        public var musicCommentVote: URL { endpoints.url("Musics/MusicCommentVote") }
         public var musicCommentCreate: URL { endpoints.url("Musics/MusicCommentCreate") }
         public var musicContributors: URL { endpoints.url("Musics/MusicContributors") }
         public var musicView: URL { endpoints.url("Musics/MusicView") }

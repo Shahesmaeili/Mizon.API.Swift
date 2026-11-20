@@ -131,6 +131,31 @@ struct MizonAPITests {
         #expect(!local.assumesHTTP3Capable)
     }
 
+    @Test func musicDiscussionQueriesMatchDotNetPagingAndEscaping() async throws {
+        let api = MizonApi()
+        try await api.setToken("test-only")
+        let music = UUID(uuidString: "aa000000-0000-0000-0000-000000000001")!
+        let parent = UUID(uuidString: "bb000000-0000-0000-0000-000000000002")!
+        let cursor = UUID(uuidString: "cc000000-0000-0000-0000-000000000003")!
+        let page = MusicCommentsOperation(.init(musicPublicId: music, parentMusicCommentPublicId: parent,
+                                               after: cursor, pageSize: 24, sort: "likes+up", timedOnly: true))
+        let request = try await api.makeRequest(page.apiRequest)
+        #expect(request.url?.path == "/Musics/MusicComments")
+        #expect(request.url?.absoluteString.hasSuffix(
+            "?MusicPublicId=aa000000-0000-0000-0000-000000000001&ParentMusicCommentPublicId=bb000000-0000-0000-0000-000000000002&After=cc000000-0000-0000-0000-000000000003&PageSize=24&Sort=likes%2Bup&TimedOnly=true"
+        ) == true)
+
+        let unchanged = try await api.makeRequest(MusicCommentsOperation(.init(musicPublicId: music, timedOnly: false)).apiRequest)
+        #expect(unchanged.url?.query == "MusicPublicId=aa000000-0000-0000-0000-000000000001")
+        let tags = try await api.makeRequest(MusicCommentTagSearchOperation(.init(type: "music", query: "A+B")).apiRequest)
+        #expect(tags.url?.path == "/Musics/MusicCommentTagSearch")
+        #expect(tags.url?.absoluteString.hasSuffix("?Type=music&Query=A%2BB") == true)
+        let vote = MusicCommentVoteOperation(.init(musicPublicId: music, musicCommentPublicId: parent, vote: -1)).apiRequest
+        #expect(vote.endpoint.path == "/Musics/MusicCommentVote")
+        #expect(vote.httpMethod == .POST)
+        #expect(vote.clientCacheStrategy == .disabled)
+    }
+
     @Test func transportSendsApplicationLanguage() async throws {
         let api = MizonApi(languageProvider: { "fa-IR" })
         try await api.setToken("test-only")

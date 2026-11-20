@@ -142,5 +142,11 @@ struct DotNetContractTests {
         try check(PersonFollowResponse.self, "PersonFollowResponse")
         try check(PersonMusicsResponse.self, "PersonMusicsResponse")
         try check(PersonProfileResponse.self, "PersonProfileResponse")
+        try check(MusicCommentTagRequest.self, "MusicCommentTagRequest")
+        try check(MusicCommentTagSearchRequest.self, "MusicCommentTagSearchRequest")
+        try check(MusicCommentVoteRequest.self, "MusicCommentVoteRequest")
+        try check(MusicCommentTagSearchResponse.self, "MusicCommentTagSearchResponse")
+        try check(MusicCommentVoteResponse.self, "MusicCommentVoteResponse")
+        try check(MusicCommentTagItem.self, "MusicCommentTagItem")
     }
 }

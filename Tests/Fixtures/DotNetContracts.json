@@ -15,11 +15,23 @@
   "MusicCommentCreateRequest": {
     "musicPublicId": "12345678-1234-1234-1234-123456789abc",
     "text": "فارسی + & value",
-    "timestamp": "1.02:03:04.1234567"
+    "timestamp": "1.02:03:04.1234567",
+    "parentMusicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "tags": [
+      {
+        "type": "sample",
+        "publicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
   },
   "MusicCommentsRequest": {
     "musicPublicId": "12345678-1234-1234-1234-123456789abc",
-    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc"
+    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "parentMusicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "after": "12345678-1234-1234-1234-123456789abc",
+    "pageSize": 2,
+    "sort": "sample",
+    "timedOnly": true
   },
   "MusicContributorMusicsRequest": {
     "musicPublicId": "12345678-1234-1234-1234-123456789abc"
@@ -186,9 +198,25 @@
         "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
         "firstName": "فارسی + & value",
         "lastName": "فارسی + & value",
-        "username": "فارسی + & value"
+        "username": "فارسی + & value",
+        "parentMusicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+        "createDateTime": "2026-11-20T12:34:56.000Z",
+        "platform": "sample",
+        "replies": 2,
+        "likes": 2,
+        "dislikes": 2,
+        "myVote": 2,
+        "tags": [
+          {
+            "type": "sample",
+            "publicId": "12345678-1234-1234-1234-123456789abc",
+            "label": "sample",
+            "navigationPublicId": "12345678-1234-1234-1234-123456789abc"
+          }
+        ]
       }
-    ]
+    ],
+    "next": "12345678-1234-1234-1234-123456789abc"
   },
   "MusicCommentItemResponse": {
     "publicId": "12345678-1234-1234-1234-123456789abc",
@@ -198,7 +226,22 @@
     "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
     "firstName": "فارسی + & value",
     "lastName": "فارسی + & value",
-    "username": "فارسی + & value"
+    "username": "فارسی + & value",
+    "parentMusicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "createDateTime": "2026-11-20T12:34:56.000Z",
+    "platform": "sample",
+    "replies": 2,
+    "likes": 2,
+    "dislikes": 2,
+    "myVote": 2,
+    "tags": [
+      {
+        "type": "sample",
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "label": "sample",
+        "navigationPublicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
   },
   "MusicContributorsResponse": {
     "contributors": [
@@ -1025,5 +1068,39 @@
     "musicsCount": 12,
     "isFollowing": true,
     "canFollow": true
+  },
+  "MusicCommentTagSearchResponse": {
+    "tags": [
+      {
+        "type": "sample",
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "label": "sample",
+        "navigationPublicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ]
+  },
+  "MusicCommentTagItem": {
+    "type": "sample",
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "label": "sample",
+    "navigationPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicCommentVoteResponse": {
+    "likes": 2,
+    "dislikes": 2,
+    "myVote": 2
+  },
+  "MusicCommentTagSearchRequest": {
+    "type": "sample",
+    "query": "sample"
+  },
+  "MusicCommentVoteRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "vote": 2
+  },
+  "MusicCommentTagRequest": {
+    "type": "sample",
+    "publicId": "12345678-1234-1234-1234-123456789abc"
   }
 }

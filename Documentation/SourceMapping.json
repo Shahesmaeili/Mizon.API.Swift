@@ -630,5 +630,29 @@
   [
     "Mizon.API/MizonSocket.WindowPresence.cs",
     "Mizon.API/MizonSocket.swift"
+  ],
+  [
+    "Mizon.API.Client/Operations/Musics/MusicCommentTagSearchOperation.cs",
+    "Mizon.API.Client/Operations/Musics/MusicCommentTagSearchOperation.swift"
+  ],
+  [
+    "Mizon.API.Client/Operations/Musics/MusicCommentVoteOperation.cs",
+    "Mizon.API.Client/Operations/Musics/MusicCommentVoteOperation.swift"
+  ],
+  [
+    "Mizon.API.Client/Requests/Musics/MusicCommentTagSearchRequest.cs",
+    "Mizon.API.Client/Requests/Musics/MusicCommentTagSearchRequest.swift"
+  ],
+  [
+    "Mizon.API.Client/Requests/Musics/MusicCommentVoteRequest.cs",
+    "Mizon.API.Client/Requests/Musics/MusicCommentVoteRequest.swift"
+  ],
+  [
+    "Mizon.API.Client/Responses/Musics/MusicCommentTagSearchResponse.cs",
+    "Mizon.API.Client/Responses/Musics/MusicCommentTagSearchResponse.swift"
+  ],
+  [
+    "Mizon.API.Client/Responses/Musics/MusicCommentVoteResponse.cs",
+    "Mizon.API.Client/Responses/Musics/MusicCommentVoteResponse.swift"
   ]
 ]

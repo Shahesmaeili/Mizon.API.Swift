@@ -24,13 +24,18 @@ properties = 0
 for model in models:
     text = (source / model['source']).read_text(encoding='utf-8-sig')
     declaration = re.search(r'public (?:sealed )?class ' + model['name'] + r'(?:\s*:\s*\w+)?\s*(\{|;)', text)
-    assert declaration, f'Missing source class: {model["name"]}'
-    start = cursor = declaration.end()
-    depth = 1 if declaration[1] == "{" else 0
-    while depth:
-        depth += (text[cursor] == '{') - (text[cursor] == '}')
-        cursor += 1
-    fields = re.findall(r'public\s+([\w<>?\[\]]+)\s+(\w+)\s*\{\s*get;\s*(?:set|init);', text[start:cursor-1])
+    if declaration:
+        start = cursor = declaration.end()
+        depth = 1 if declaration[1] == "{" else 0
+        while depth:
+            depth += (text[cursor] == '{') - (text[cursor] == '}')
+            cursor += 1
+        fields = re.findall(r'public\s+([\w<>?\[\]]+)\s+(\w+)\s*\{\s*get;\s*(?:set|init);', text[start:cursor-1])
+    else:
+        record = re.search(r'public (?:sealed )?record ' + model['name'] + r'\(([^)]*)\)', text)
+        assert record, f'Missing source class or record: {model["name"]}'
+        fields = [re.match(r'([\w<>?\[\]]+)\s+(\w+)', item.strip()).groups()
+                  for item in record[1].split(',')]
     assert fields == [(p['type'], p['name']) for p in model['properties']], f'.NET contract changed: {model["name"]}'
     swift_path = root / pathlib.Path(model['source']).with_suffix('.swift')
     swift = swift_path.read_text().split('public struct ' + model['name'] + ':', 1)[1].split('\npublic struct ', 1)[0]
