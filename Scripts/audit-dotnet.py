@@ -8,12 +8,14 @@ if source is None:
 
 def swift_type(value):
     if value.endswith('?'): return swift_type(value[:-1]) + '?'
+    if value.endswith('[]'): return '[' + swift_type(value[:-2]) + ']'
     if value.startswith('List<'): return '[' + swift_type(value[5:-1]) + ']'
     return {'Guid': 'UUID', 'string': 'String', 'int': 'Int', 'long': 'Int64', 'short': 'Int16',
             'float': 'Float', 'double': 'Double', 'bool': 'Bool', 'TimeSpan': 'TimeSpan', 'DateTimeOffset': 'Date'}.get(value, value)
 
 mapping = json.loads((root / 'Documentation/SourceMapping.json').read_text())
-actual_files = {str(p.relative_to(source)) for p in source.rglob('*.cs')}
+actual_files = {str(p.relative_to(source)) for module in ('Mizon.API', 'Mizon.API.Client')
+                for p in (source / module).rglob('*.cs') if 'obj' not in p.relative_to(source).parts}
 assert actual_files == {entry[0] for entry in mapping}, 'Source file inventory changed'
 for old, new in mapping:
     assert (root / new).is_file(), f'Missing Swift file for {old}'
@@ -21,14 +23,14 @@ models = json.loads((root / 'Documentation/DotNetContract.json').read_text())['m
 properties = 0
 for model in models:
     text = (source / model['source']).read_text(encoding='utf-8-sig')
-    declaration = re.search(r'public (?:sealed )?class ' + model['name'] + r'(?:\s*:\s*\w+)?\s*\{', text)
+    declaration = re.search(r'public (?:sealed )?class ' + model['name'] + r'(?:\s*:\s*\w+)?\s*(\{|;)', text)
     assert declaration, f'Missing source class: {model["name"]}'
     start = cursor = declaration.end()
-    depth = 1
+    depth = 1 if declaration[1] == "{" else 0
     while depth:
         depth += (text[cursor] == '{') - (text[cursor] == '}')
         cursor += 1
-    fields = re.findall(r'public\s+([\w<>?]+)\s+(\w+)\s*\{\s*get;\s*set;', text[start:cursor-1])
+    fields = re.findall(r'public\s+([\w<>?\[\]]+)\s+(\w+)\s*\{\s*get;\s*(?:set|init);', text[start:cursor-1])
     assert fields == [(p['type'], p['name']) for p in model['properties']], f'.NET contract changed: {model["name"]}'
     swift_path = root / pathlib.Path(model['source']).with_suffix('.swift')
     swift = swift_path.read_text().split('public struct ' + model['name'] + ':', 1)[1].split('\npublic struct ', 1)[0]
@@ -48,5 +50,6 @@ for p in operations:
     if 'MizonApiStreamRequest' not in text:
         duration = re.search(r'MaximumClientCacheDuration = TimeSpan.From(Seconds|Minutes)\((\d+)\)', text)
         seconds = int(duration[2]) * (60 if duration[1] == 'Minutes' else 1) if duration else 300
-        assert f'maximumClientCacheDuration = {seconds}\n' in swift, f'Cache duration differs: {p.name}'
+        configured = re.search(r'maximumClientCacheDuration = (\d+)', swift)
+        assert (int(configured[1]) if configured else 300) == seconds, f'Cache duration differs: {p.name}'
 print(f'PASS: {len(mapping)} source files, {len(models)} models, {properties} typed fields, {len(operations)} operations')

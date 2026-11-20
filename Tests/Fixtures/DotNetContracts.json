@@ -18,7 +18,8 @@
     "timestamp": "1.02:03:04.1234567"
   },
   "MusicCommentsRequest": {
-    "musicPublicId": "12345678-1234-1234-1234-123456789abc"
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc"
   },
   "MusicContributorMusicsRequest": {
     "musicPublicId": "12345678-1234-1234-1234-123456789abc"
@@ -141,6 +142,17 @@
       "width": 1234,
       "height": 1234,
       "primaryAccentColor": "فارسی + & value"
+    },
+    "currentMood": {
+      "publicId": "12345678-1234-1234-1234-123456789abc",
+      "emoji": "sample",
+      "title": "sample",
+      "persianTitle": "sample",
+      "animationMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "effectMediaPublicIds": [
+        "12345678-1234-1234-1234-123456789abc"
+      ]
     }
   },
   "MeProfileResponse": {
@@ -412,6 +424,11 @@
       "width": 1234,
       "height": 1234,
       "primaryAccentColor": "فارسی + & value"
+    },
+    "musicVideo": {
+      "publicId": "12345678-1234-1234-1234-123456789abc",
+      "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
     }
   },
   "MusicLanguageResponse": {
@@ -595,5 +612,418 @@
     "lastName": "فارسی + & value",
     "username": "فارسی + & value",
     "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "ClientMoodRequest": {
+    "clientMoodTypePublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "ClientMoodTypesRequest": {},
+  "ClientProfileRequest": {
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "FollowingActivitiesRequest": {
+    "scope": "sample",
+    "pageSize": 12,
+    "cursor": "sample"
+  },
+  "RegisterRequest": {
+    "firstName": "sample",
+    "lastName": "sample",
+    "username": "sample",
+    "emailAddress": "sample",
+    "password": "sample"
+  },
+  "MusicFeaturesRequest": {
+    "limit": 12
+  },
+  "MusicLibraryRequest": {
+    "pageSize": 12,
+    "cursor": "sample"
+  },
+  "MusicLikeRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "liked": true
+  },
+  "MusicPlayRequest": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "playbackPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicPlaylistDetailsRequest": {
+    "musicPlaylistPublicId": "12345678-1234-1234-1234-123456789abc",
+    "pageSize": 12,
+    "cursor": "sample"
+  },
+  "FeaturedPersonsRequest": {
+    "typeCode": "sample"
+  },
+  "PersonFollowRequest": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "following": true
+  },
+  "PersonMusicsRequest": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "beforeMusicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "PersonProfileRequest": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "ClientMoodItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "emoji": "sample",
+    "title": "sample",
+    "persianTitle": "sample",
+    "animationMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "effectMediaPublicIds": [
+      "12345678-1234-1234-1234-123456789abc"
+    ]
+  },
+  "ClientMoodResponse": {
+    "currentMood": {
+      "publicId": "12345678-1234-1234-1234-123456789abc",
+      "emoji": "sample",
+      "title": "sample",
+      "persianTitle": "sample",
+      "animationMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+      "effectMediaPublicIds": [
+        "12345678-1234-1234-1234-123456789abc"
+      ]
+    }
+  },
+  "ClientMoodTypesResponse": {
+    "items": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "emoji": "sample",
+        "title": "sample",
+        "persianTitle": "sample",
+        "animationMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "effectMediaPublicIds": [
+          "12345678-1234-1234-1234-123456789abc"
+        ]
+      }
+    ]
+  },
+  "ClientProfileResponse": {
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "sample",
+    "lastName": "sample",
+    "nickName": "sample",
+    "username": "sample",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "primaryAccentColor": "sample"
+  },
+  "FollowingActivitiesResponse": {
+    "hasFollowings": true,
+    "hasMore": true,
+    "nextCursor": "sample",
+    "activities": [
+      {
+        "activityId": "sample",
+        "activityType": "sample",
+        "targetType": "sample",
+        "domain": "sample",
+        "createDateTime": "2026-11-20T12:34:56.000Z",
+        "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+        "firstName": "sample",
+        "lastName": "sample",
+        "nickName": "sample",
+        "username": "sample",
+        "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+        "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+        "musicPlaylistPublicId": "12345678-1234-1234-1234-123456789abc",
+        "storyPublicId": "12345678-1234-1234-1234-123456789abc",
+        "storyViewedByMe": true,
+        "storyContentTypeTitle": "sample",
+        "taggedMusicsCount": 12,
+        "title": "sample",
+        "persianTitle": "sample",
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "commentText": "sample",
+        "reactionEmoji": "sample",
+        "playlistMusicsCount": 12
+      }
+    ]
+  },
+  "FollowingActivityItemResponse": {
+    "activityId": "sample",
+    "activityType": "sample",
+    "targetType": "sample",
+    "domain": "sample",
+    "createDateTime": "2026-11-20T12:34:56.000Z",
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "sample",
+    "lastName": "sample",
+    "nickName": "sample",
+    "username": "sample",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicCommentPublicId": "12345678-1234-1234-1234-123456789abc",
+    "musicPlaylistPublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyPublicId": "12345678-1234-1234-1234-123456789abc",
+    "storyViewedByMe": true,
+    "storyContentTypeTitle": "sample",
+    "taggedMusicsCount": 12,
+    "title": "sample",
+    "persianTitle": "sample",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "commentText": "sample",
+    "reactionEmoji": "sample",
+    "playlistMusicsCount": 12
+  },
+  "RegisterResponse": {
+    "accessToken": "sample",
+    "refreshToken": "sample",
+    "sessionPublicId": "12345678-1234-1234-1234-123456789abc",
+    "clientPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicFeaturesResponse": {
+    "items": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+        "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "contentTypeCode": "sample",
+        "displaySeconds": 12,
+        "title": "sample",
+        "persianTitle": "sample",
+        "durationSeconds": 1.5,
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "primaryAccentColor": "sample",
+        "likesCount": 12,
+        "viewsCount": 12,
+        "likedByMe": true,
+        "contributors": [
+          {
+            "personPublicId": "12345678-1234-1234-1234-123456789abc",
+            "firstName": "sample",
+            "lastName": "sample",
+            "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+          }
+        ],
+        "genres": [
+          {
+            "publicId": "12345678-1234-1234-1234-123456789abc",
+            "title": "sample",
+            "persianTitle": "sample"
+          }
+        ]
+      }
+    ]
+  },
+  "MusicFeatureItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "previewMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "contentTypeCode": "sample",
+    "displaySeconds": 12,
+    "title": "sample",
+    "persianTitle": "sample",
+    "durationSeconds": 1.5,
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "primaryAccentColor": "sample",
+    "likesCount": 12,
+    "viewsCount": 12,
+    "likedByMe": true,
+    "contributors": [
+      {
+        "personPublicId": "12345678-1234-1234-1234-123456789abc",
+        "firstName": "sample",
+        "lastName": "sample",
+        "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+      }
+    ],
+    "genres": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "sample",
+        "persianTitle": "sample"
+      }
+    ]
+  },
+  "MusicFeatureContributorResponse": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "sample",
+    "lastName": "sample",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "MusicFeatureGenreResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "sample",
+    "persianTitle": "sample"
+  },
+  "MusicLibraryResponse": {
+    "playlists": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "sample",
+        "musicsCount": 12,
+        "lastMusicCoverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "lastUpdatedAt": "2026-11-20T12:34:56.000Z"
+      }
+    ],
+    "totalPlaylistsCount": 12,
+    "totalMusicsCount": 12,
+    "nextCursor": "sample"
+  },
+  "MusicLibraryPlaylistItemResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "sample",
+    "musicsCount": 12,
+    "lastMusicCoverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "lastUpdatedAt": "2026-11-20T12:34:56.000Z"
+  },
+  "MusicLikeResponse": {
+    "musicPublicId": "12345678-1234-1234-1234-123456789abc",
+    "likedByMe": true,
+    "likesCount": 12
+  },
+  "MusicPlayResponse": {},
+  "MusicPlaylistDetailsResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "sample",
+    "isOwner": true,
+    "musicsCount": 12,
+    "musics": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "sample",
+        "persianTitle": "sample",
+        "likesCount": 12,
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "contributors": [
+          {
+            "firstName": "sample",
+            "lastName": "sample"
+          }
+        ]
+      }
+    ],
+    "nextCursor": "sample"
+  },
+  "MusicVideoResponse": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "mediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "FeaturedPersonsResponse": {
+    "persons": [
+      {
+        "personPublicId": "12345678-1234-1234-1234-123456789abc",
+        "sortOrder": 12,
+        "firstName": "sample",
+        "lastName": "sample",
+        "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "modelMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "accentColor": "sample",
+        "modelAttribution": "sample",
+        "modelYawInDegrees": 1.5,
+        "modelViewScale": 1.5,
+        "modelVerticalFocus": 1.5,
+        "followersCount": 12,
+        "isFollowing": true,
+        "canFollow": true,
+        "musicsCount": 12,
+        "genreTitle": "sample",
+        "persianGenreTitle": "sample",
+        "monthlyListenersCount": 12,
+        "dailyPlays": [
+          12
+        ],
+        "latestMusics": [
+          {
+            "publicId": "12345678-1234-1234-1234-123456789abc",
+            "title": "sample",
+            "persianTitle": "sample",
+            "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+            "duration": "01:02:03",
+            "likesCount": 12
+          }
+        ]
+      }
+    ]
+  },
+  "FeaturedPersonItem": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "sortOrder": 12,
+    "firstName": "sample",
+    "lastName": "sample",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "modelMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "accentColor": "sample",
+    "modelAttribution": "sample",
+    "modelYawInDegrees": 1.5,
+    "modelViewScale": 1.5,
+    "modelVerticalFocus": 1.5,
+    "followersCount": 12,
+    "isFollowing": true,
+    "canFollow": true,
+    "musicsCount": 12,
+    "genreTitle": "sample",
+    "persianGenreTitle": "sample",
+    "monthlyListenersCount": 12,
+    "dailyPlays": [
+      12
+    ],
+    "latestMusics": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "sample",
+        "persianTitle": "sample",
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "duration": "01:02:03",
+        "likesCount": 12
+      }
+    ]
+  },
+  "FeaturedPersonMusicItem": {
+    "publicId": "12345678-1234-1234-1234-123456789abc",
+    "title": "sample",
+    "persianTitle": "sample",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "duration": "01:02:03",
+    "likesCount": 12
+  },
+  "PersonFollowResponse": {
+    "isFollowing": true,
+    "followersCount": 12
+  },
+  "PersonMusicsResponse": {
+    "musics": [
+      {
+        "publicId": "12345678-1234-1234-1234-123456789abc",
+        "title": "sample",
+        "persianTitle": "sample",
+        "likesCount": 12,
+        "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+        "contributors": [
+          {
+            "firstName": "sample",
+            "lastName": "sample"
+          }
+        ]
+      }
+    ],
+    "nextBeforeMusicPublicId": "12345678-1234-1234-1234-123456789abc"
+  },
+  "PersonProfileResponse": {
+    "personPublicId": "12345678-1234-1234-1234-123456789abc",
+    "firstName": "sample",
+    "lastName": "sample",
+    "profileMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "coverMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "modelMediaPublicId": "12345678-1234-1234-1234-123456789abc",
+    "modelYawInDegrees": 1.5,
+    "followersCount": 12,
+    "followingCount": 12,
+    "musicsCount": 12,
+    "isFollowing": true,
+    "canFollow": true
   }
 }

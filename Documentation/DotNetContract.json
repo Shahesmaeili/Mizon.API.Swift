@@ -1,5 +1,5 @@
 {
-  "revision": "5e7541aac20a64315e3985d166236068c243c624",
+  "revision": "35c9b294dbe628367b8f3de64f9e2ba363cb3101",
   "models": [
     {
       "name": "LoginRequest",
@@ -74,6 +74,10 @@
         {
           "name": "MusicPublicId",
           "type": "Guid"
+        },
+        {
+          "name": "MusicCommentPublicId",
+          "type": "Guid?"
         }
       ]
     },
@@ -176,7 +180,7 @@
       "properties": [
         {
           "name": "MusicPublicId",
-          "type": "Guid"
+          "type": "Guid?"
         }
       ]
     },
@@ -435,6 +439,10 @@
         {
           "name": "MeProfile",
           "type": "MeProfileResponse?"
+        },
+        {
+          "name": "CurrentMood",
+          "type": "ClientMoodItemResponse?"
         }
       ]
     },
@@ -997,6 +1005,10 @@
         {
           "name": "MusicCover",
           "type": "MusicCoverResponse?"
+        },
+        {
+          "name": "MusicVideo",
+          "type": "MusicVideoResponse?"
         }
       ]
     },
@@ -1442,6 +1454,878 @@
         {
           "name": "ProfileMediaPublicId",
           "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "ClientMoodRequest",
+      "source": "Mizon.API.Client/Requests/Clients/ClientMoodRequest.cs",
+      "properties": [
+        {
+          "name": "ClientMoodTypePublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "ClientMoodTypesRequest",
+      "source": "Mizon.API.Client/Requests/Clients/ClientMoodTypesRequest.cs",
+      "properties": []
+    },
+    {
+      "name": "ClientProfileRequest",
+      "source": "Mizon.API.Client/Requests/Clients/ClientProfileRequest.cs",
+      "properties": [
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "FollowingActivitiesRequest",
+      "source": "Mizon.API.Client/Requests/Clients/FollowingActivitiesRequest.cs",
+      "properties": [
+        {
+          "name": "Scope",
+          "type": "string"
+        },
+        {
+          "name": "PageSize",
+          "type": "int"
+        },
+        {
+          "name": "Cursor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "RegisterRequest",
+      "source": "Mizon.API.Client/Requests/Clients/RegisterRequest.cs",
+      "properties": [
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "Username",
+          "type": "string"
+        },
+        {
+          "name": "EmailAddress",
+          "type": "string"
+        },
+        {
+          "name": "Password",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MusicFeaturesRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicFeaturesRequest.cs",
+      "properties": [
+        {
+          "name": "Limit",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MusicLibraryRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicLibraryRequest.cs",
+      "properties": [
+        {
+          "name": "PageSize",
+          "type": "int"
+        },
+        {
+          "name": "Cursor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicLikeRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicLikeRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Liked",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlayRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicPlayRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PlaybackPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlaylistDetailsRequest",
+      "source": "Mizon.API.Client/Requests/Musics/MusicPlaylistDetailsRequest.cs",
+      "properties": [
+        {
+          "name": "MusicPlaylistPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PageSize",
+          "type": "int"
+        },
+        {
+          "name": "Cursor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "FeaturedPersonsRequest",
+      "source": "Mizon.API.Client/Requests/Persons/FeaturedPersonsRequest.cs",
+      "properties": [
+        {
+          "name": "TypeCode",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "PersonFollowRequest",
+      "source": "Mizon.API.Client/Requests/Persons/PersonFollowRequest.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Following",
+          "type": "bool?"
+        }
+      ]
+    },
+    {
+      "name": "PersonMusicsRequest",
+      "source": "Mizon.API.Client/Requests/Persons/PersonMusicsRequest.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "BeforeMusicPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "PersonProfileRequest",
+      "source": "Mizon.API.Client/Requests/Persons/PersonProfileRequest.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "ClientMoodItemResponse",
+      "source": "Mizon.API.Client/Responses/Clients/ClientMoodItemResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Emoji",
+          "type": "string"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "AnimationMediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PreviewMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "EffectMediaPublicIds",
+          "type": "List<Guid>"
+        }
+      ]
+    },
+    {
+      "name": "ClientMoodResponse",
+      "source": "Mizon.API.Client/Responses/Clients/ClientMoodResponse.cs",
+      "properties": [
+        {
+          "name": "CurrentMood",
+          "type": "ClientMoodItemResponse?"
+        }
+      ]
+    },
+    {
+      "name": "ClientMoodTypesResponse",
+      "source": "Mizon.API.Client/Responses/Clients/ClientMoodTypesResponse.cs",
+      "properties": [
+        {
+          "name": "Items",
+          "type": "List<ClientMoodItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "ClientProfileResponse",
+      "source": "Mizon.API.Client/Responses/Clients/ClientProfileResponse.cs",
+      "properties": [
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "NickName",
+          "type": "string?"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "PrimaryAccentColor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "FollowingActivitiesResponse",
+      "source": "Mizon.API.Client/Responses/Clients/FollowingActivitiesResponse.cs",
+      "properties": [
+        {
+          "name": "HasFollowings",
+          "type": "bool"
+        },
+        {
+          "name": "HasMore",
+          "type": "bool"
+        },
+        {
+          "name": "NextCursor",
+          "type": "string?"
+        },
+        {
+          "name": "Activities",
+          "type": "List<FollowingActivityItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "FollowingActivityItemResponse",
+      "source": "Mizon.API.Client/Responses/Clients/FollowingActivitiesResponse.cs",
+      "properties": [
+        {
+          "name": "ActivityId",
+          "type": "string"
+        },
+        {
+          "name": "ActivityType",
+          "type": "string"
+        },
+        {
+          "name": "TargetType",
+          "type": "string"
+        },
+        {
+          "name": "Domain",
+          "type": "string"
+        },
+        {
+          "name": "CreateDateTime",
+          "type": "DateTimeOffset"
+        },
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string?"
+        },
+        {
+          "name": "LastName",
+          "type": "string?"
+        },
+        {
+          "name": "NickName",
+          "type": "string?"
+        },
+        {
+          "name": "Username",
+          "type": "string?"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "MusicPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "MusicCommentPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "MusicPlaylistPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "StoryPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "StoryViewedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "StoryContentTypeTitle",
+          "type": "string?"
+        },
+        {
+          "name": "TaggedMusicsCount",
+          "type": "int?"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "CommentText",
+          "type": "string?"
+        },
+        {
+          "name": "ReactionEmoji",
+          "type": "string?"
+        },
+        {
+          "name": "PlaylistMusicsCount",
+          "type": "int?"
+        }
+      ]
+    },
+    {
+      "name": "RegisterResponse",
+      "source": "Mizon.API.Client/Responses/Clients/RegisterResponse.cs",
+      "properties": [
+        {
+          "name": "AccessToken",
+          "type": "string"
+        },
+        {
+          "name": "RefreshToken",
+          "type": "string"
+        },
+        {
+          "name": "SessionPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "ClientPublicId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MusicFeaturesResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFeaturesResponse.cs",
+      "properties": [
+        {
+          "name": "Items",
+          "type": "List<MusicFeatureItemResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicFeatureItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFeaturesResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "PreviewMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ContentTypeCode",
+          "type": "string"
+        },
+        {
+          "name": "DisplaySeconds",
+          "type": "int"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "DurationSeconds",
+          "type": "double?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "PrimaryAccentColor",
+          "type": "string?"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        },
+        {
+          "name": "ViewsCount",
+          "type": "int"
+        },
+        {
+          "name": "LikedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "Contributors",
+          "type": "List<MusicFeatureContributorResponse>"
+        },
+        {
+          "name": "Genres",
+          "type": "List<MusicFeatureGenreResponse>"
+        }
+      ]
+    },
+    {
+      "name": "MusicFeatureContributorResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFeaturesResponse.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "MusicFeatureGenreResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicFeaturesResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicLibraryResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLibraryResponse.cs",
+      "properties": [
+        {
+          "name": "Playlists",
+          "type": "List<MusicLibraryPlaylistItemResponse>"
+        },
+        {
+          "name": "TotalPlaylistsCount",
+          "type": "int"
+        },
+        {
+          "name": "TotalMusicsCount",
+          "type": "long"
+        },
+        {
+          "name": "NextCursor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicLibraryPlaylistItemResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLibraryResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        },
+        {
+          "name": "LastMusicCoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "LastUpdatedAt",
+          "type": "DateTimeOffset"
+        }
+      ]
+    },
+    {
+      "name": "MusicLikeResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicLikeResponse.cs",
+      "properties": [
+        {
+          "name": "MusicPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "LikedByMe",
+          "type": "bool"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MusicPlayResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlayResponse.cs",
+      "properties": []
+    },
+    {
+      "name": "MusicPlaylistDetailsResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicPlaylistDetailsResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "IsOwner",
+          "type": "bool"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        },
+        {
+          "name": "Musics",
+          "type": "List<MusicTabMusicItemResponse>"
+        },
+        {
+          "name": "NextCursor",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "MusicVideoResponse",
+      "source": "Mizon.API.Client/Responses/Musics/MusicResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "MediaPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "FeaturedPersonsResponse",
+      "source": "Mizon.API.Client/Responses/Persons/FeaturedPersonsResponse.cs",
+      "properties": [
+        {
+          "name": "Persons",
+          "type": "List<FeaturedPersonItem>"
+        }
+      ]
+    },
+    {
+      "name": "FeaturedPersonItem",
+      "source": "Mizon.API.Client/Responses/Persons/FeaturedPersonsResponse.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "SortOrder",
+          "type": "short"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ModelMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "AccentColor",
+          "type": "string?"
+        },
+        {
+          "name": "ModelAttribution",
+          "type": "string?"
+        },
+        {
+          "name": "ModelYawInDegrees",
+          "type": "float"
+        },
+        {
+          "name": "ModelViewScale",
+          "type": "float"
+        },
+        {
+          "name": "ModelVerticalFocus",
+          "type": "float"
+        },
+        {
+          "name": "FollowersCount",
+          "type": "int"
+        },
+        {
+          "name": "IsFollowing",
+          "type": "bool"
+        },
+        {
+          "name": "CanFollow",
+          "type": "bool"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        },
+        {
+          "name": "GenreTitle",
+          "type": "string?"
+        },
+        {
+          "name": "PersianGenreTitle",
+          "type": "string?"
+        },
+        {
+          "name": "MonthlyListenersCount",
+          "type": "int"
+        },
+        {
+          "name": "DailyPlays",
+          "type": "int[]"
+        },
+        {
+          "name": "LatestMusics",
+          "type": "List<FeaturedPersonMusicItem>"
+        }
+      ]
+    },
+    {
+      "name": "FeaturedPersonMusicItem",
+      "source": "Mizon.API.Client/Responses/Persons/FeaturedPersonsResponse.cs",
+      "properties": [
+        {
+          "name": "PublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "PersianTitle",
+          "type": "string?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "Duration",
+          "type": "TimeSpan?"
+        },
+        {
+          "name": "LikesCount",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "PersonFollowResponse",
+      "source": "Mizon.API.Client/Responses/Persons/PersonFollowResponse.cs",
+      "properties": [
+        {
+          "name": "IsFollowing",
+          "type": "bool"
+        },
+        {
+          "name": "FollowersCount",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "PersonMusicsResponse",
+      "source": "Mizon.API.Client/Responses/Persons/PersonMusicsResponse.cs",
+      "properties": [
+        {
+          "name": "Musics",
+          "type": "List<MusicTabMusicItemResponse>"
+        },
+        {
+          "name": "NextBeforeMusicPublicId",
+          "type": "Guid?"
+        }
+      ]
+    },
+    {
+      "name": "PersonProfileResponse",
+      "source": "Mizon.API.Client/Responses/Persons/PersonProfileResponse.cs",
+      "properties": [
+        {
+          "name": "PersonPublicId",
+          "type": "Guid"
+        },
+        {
+          "name": "FirstName",
+          "type": "string"
+        },
+        {
+          "name": "LastName",
+          "type": "string"
+        },
+        {
+          "name": "ProfileMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "CoverMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ModelMediaPublicId",
+          "type": "Guid?"
+        },
+        {
+          "name": "ModelYawInDegrees",
+          "type": "float?"
+        },
+        {
+          "name": "FollowersCount",
+          "type": "int"
+        },
+        {
+          "name": "FollowingCount",
+          "type": "int?"
+        },
+        {
+          "name": "MusicsCount",
+          "type": "int"
+        },
+        {
+          "name": "IsFollowing",
+          "type": "bool"
+        },
+        {
+          "name": "CanFollow",
+          "type": "bool"
         }
       ]
     }

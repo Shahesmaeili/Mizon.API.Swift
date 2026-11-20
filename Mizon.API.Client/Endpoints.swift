@@ -8,6 +8,11 @@ public struct Endpoints: Sendable {
     public var clients: Clients { Clients(endpoints: self) }
     public struct Clients: Sendable {
         fileprivate let endpoints: Endpoints
+        public var clientMood: URL { endpoints.url("Clients/ClientMood") }
+        public var clientMoodTypes: URL { endpoints.url("Clients/ClientMoodTypes") }
+        public var clientProfile: URL { endpoints.url("Clients/ClientProfile") }
+        public var followingActivities: URL { endpoints.url("Clients/FollowingActivities") }
+        public var register: URL { endpoints.url("Clients/Register") }
         public var login: URL { endpoints.url("Clients/Login") }
         public var logout: URL { endpoints.url("Clients/Logout") }
         public var me: URL { endpoints.url("Clients/Me") }
@@ -15,6 +20,11 @@ public struct Endpoints: Sendable {
     public var musics: Musics { Musics(endpoints: self) }
     public struct Musics: Sendable {
         fileprivate let endpoints: Endpoints
+        public var musicFeatures: URL { endpoints.url("Musics/MusicFeatures") }
+        public var musicLibrary: URL { endpoints.url("Musics/MusicLibrary") }
+        public var musicLike: URL { endpoints.url("Musics/MusicLike") }
+        public var musicPlay: URL { endpoints.url("Musics/MusicPlay") }
+        public var musicPlaylistDetails: URL { endpoints.url("Musics/MusicPlaylistDetails") }
         public var music: URL { endpoints.url("Musics/Music") }
         public var musicFileWaveform: URL { endpoints.url("Musics/MusicFileWaveform") }
         public var musicFile: URL { endpoints.url("Musics/MusicFile") }
@@ -54,5 +64,13 @@ public struct Endpoints: Sendable {
     public struct Search: Sendable {
         fileprivate let endpoints: Endpoints
         public var global: URL { endpoints.url("Search/Global") }
+    }
+    public var persons: Persons { Persons(endpoints: self) }
+    public struct Persons: Sendable {
+        fileprivate let endpoints: Endpoints
+        public var featuredPersons: URL { endpoints.url("Persons/FeaturedPersons") }
+        public var personFollow: URL { endpoints.url("Persons/PersonFollow") }
+        public var personMusics: URL { endpoints.url("Persons/PersonMusics") }
+        public var personProfile: URL { endpoints.url("Persons/PersonProfile") }
     }
 }

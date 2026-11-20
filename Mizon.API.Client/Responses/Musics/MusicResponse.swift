@@ -13,8 +13,9 @@ public struct MusicResponse: IApiResponse {
     public var musicAlbum: MusicAlbumResponse?
     public var musicLabel: MusicLabelResponse?
     public var musicCover: MusicCoverResponse?
+    public var musicVideo: MusicVideoResponse?
 
-    public init(title: String = "", persianTitle: String? = nil, releaseDateTime: Date? = nil, likedByMe: Bool = false, likesCount: Int = 0, viewsCount: Int = 0, musicLanguages: [MusicLanguageResponse] = [], musicGenres: [MusicGenreResponse] = [], musicAlbum: MusicAlbumResponse? = nil, musicLabel: MusicLabelResponse? = nil, musicCover: MusicCoverResponse? = nil) {
+    public init(title: String = "", persianTitle: String? = nil, releaseDateTime: Date? = nil, likedByMe: Bool = false, likesCount: Int = 0, viewsCount: Int = 0, musicLanguages: [MusicLanguageResponse] = [], musicGenres: [MusicGenreResponse] = [], musicAlbum: MusicAlbumResponse? = nil, musicLabel: MusicLabelResponse? = nil, musicCover: MusicCoverResponse? = nil, musicVideo: MusicVideoResponse? = nil) {
         self.title = title
         self.persianTitle = persianTitle
         self.releaseDateTime = releaseDateTime
@@ -26,6 +27,7 @@ public struct MusicResponse: IApiResponse {
         self.musicAlbum = musicAlbum
         self.musicLabel = musicLabel
         self.musicCover = musicCover
+        self.musicVideo = musicVideo
     }
 
     enum CodingKeys: String, CodingKey {
@@ -40,6 +42,7 @@ public struct MusicResponse: IApiResponse {
         case musicAlbum
         case musicLabel
         case musicCover
+        case musicVideo
     }
 
     public init(from decoder: any Decoder) throws {
@@ -55,6 +58,7 @@ public struct MusicResponse: IApiResponse {
         musicAlbum = try values.decodeIfPresent(MusicAlbumResponse.self, forKey: .musicAlbum)
         musicLabel = try values.decodeIfPresent(MusicLabelResponse.self, forKey: .musicLabel)
         musicCover = try values.decodeIfPresent(MusicCoverResponse.self, forKey: .musicCover)
+        musicVideo = try values.decodeIfPresent(MusicVideoResponse.self, forKey: .musicVideo)
     }
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -69,6 +73,7 @@ public struct MusicResponse: IApiResponse {
         try c.encode(musicAlbum, forKey: .musicAlbum)
         try c.encode(musicLabel, forKey: .musicLabel)
         try c.encode(musicCover, forKey: .musicCover)
+        try c.encodeIfPresent(musicVideo, forKey: .musicVideo)
     }
 
 }
@@ -248,3 +253,16 @@ public struct MusicCoverResponse: Codable, Sendable {
 
 }
 
+
+
+public struct MusicVideoResponse: Codable, Sendable {
+    public var publicId: UUID
+    public var mediaPublicId: UUID
+    public var coverMediaPublicId: UUID?
+
+    public init(publicId: UUID, mediaPublicId: UUID, coverMediaPublicId: UUID? = nil) {
+        self.publicId = publicId
+        self.mediaPublicId = mediaPublicId
+        self.coverMediaPublicId = coverMediaPublicId
+    }
+}

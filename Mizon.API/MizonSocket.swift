@@ -46,9 +46,15 @@ public struct MusicListenerPresence: Codable, Sendable {
     }
 
 }
+public struct OnlineClientCount: Codable, Sendable, Equatable {
+    public let count: Int
+    public let revision: Int64
+}
 public enum HubConnectionState: Sendable { case disconnected, connecting, connected, reconnecting }
 public enum MizonSocketEvent: Sendable {
     case stateChanged(HubConnectionState)
+    case onlineClientsChanged(OnlineClientCount?)
+    case windowPresenceChanged(ClientWindowPresenceResponse?)
     case entityViewersCountChanged(entityType: String, entityId: UUID, count: Int)
     case musicListenersSnapshot(musicPublicId: UUID, listeners: [MusicListenerPresence])
     case musicListenerUpdated(musicPublicId: UUID, listener: MusicListenerPresence)
@@ -63,6 +69,24 @@ public actor MizonSocket {
     private var setupTask: Task<Void, Never>?
     private var startTask: Task<Void, any Error>?
     private var generation = UUID()
+    private var connectionEpoch = UUID()
+    private var presenceRevision: Int64 = 0
+    private struct WindowPresenceIntent: Sendable {
+        let clientID: UUID
+        let active: Bool
+        let revision: Int64
+    }
+    private var presenceIntent: WindowPresenceIntent?
+    private var confirmedPresence: ClientWindowPresenceResponse?
+    public private(set) var onlineClients: OnlineClientCount?
+    public var windowPresence: ClientWindowPresenceResponse? {
+        get async {
+            let clientID = await currentClientPublicId
+            guard isConnected, confirmedPresence?.clientPublicId == clientID else { return nil }
+            return confirmedPresence
+        }
+    }
+
     private var currentEntity: (type: String, id: UUID)?
     private var subscribers: [UUID: AsyncStream<MizonSocketEvent>.Continuation] = [:]
     public private(set) var state: HubConnectionState = .disconnected
@@ -101,13 +125,92 @@ public actor MizonSocket {
     }
     private func removeSubscriber(_ id: UUID) { subscribers.removeValue(forKey: id) }
     private func emit(_ event: MizonSocketEvent) { for c in subscribers.values { c.yield(event) } }
-    private func changeState(_ value: HubConnectionState) { state = value; emit(.stateChanged(value)) }
+    private func changeState(_ value: HubConnectionState) {
+        guard state != value else { return }
+        state = value
+        if value != .connected {
+            connectionEpoch = UUID()
+            onlineClients = nil
+            confirmedPresence = nil
+            emit(.onlineClientsChanged(nil))
+            emit(.windowPresenceChanged(nil))
+        }
+        emit(.stateChanged(value))
+    }
+
+    public func getOnlineFollowerCount() async throws -> Int {
+        try await connection.invoke(method: "GetOnlineFollowerCount")
+    }
+
+    private func applyOnlineClientCount(_ count: OnlineClientCount) {
+        guard isConnected, count.count >= 0, count.revision >= 0,
+              onlineClients.map({ count.revision > $0.revision }) ?? true else { return }
+        onlineClients = count
+        emit(.onlineClientsChanged(count))
+    }
+
+    private func refreshAudience() async {
+        let epoch = connectionEpoch
+        // Older servers can still connect when these optional hub methods are unavailable.
+        if let count: OnlineClientCount = try? await connection.invoke(method: "GetOnlineClientCount"),
+           connectionEpoch == epoch {
+            applyOnlineClientCount(count)
+        }
+    }
+
+    public func setWindowPresence(isActive: Bool) async throws {
+        try Task.checkCancellation()
+        let clientID = await currentClientPublicId
+        try Task.checkCancellation()
+        presenceRevision += 1
+        presenceIntent = clientID.map { .init(clientID: $0, active: isActive, revision: presenceRevision) }
+        confirmedPresence = nil
+        emit(.windowPresenceChanged(nil))
+        guard let intent = presenceIntent, isConnected else { return }
+        do {
+            try await publishWindowPresence(intent)
+        } catch is CancellationError {
+            if presenceIntent?.revision == intent.revision {
+                presenceRevision += 1
+                let offline = WindowPresenceIntent(clientID: intent.clientID, active: false, revision: presenceRevision)
+                presenceIntent = offline
+                Task { try? await self.publishWindowPresence(offline) }
+            }
+            throw CancellationError()
+        }
+    }
+
+    private func publishWindowPresence(_ intent: WindowPresenceIntent) async throws {
+        let clientID = await currentClientPublicId
+        guard isConnected, clientID == intent.clientID, presenceIntent?.revision == intent.revision else { return }
+        let epoch = connectionEpoch
+        let response: ClientWindowPresenceResponse = try await connection.invoke(
+            method: "SetWindowPresence", arguments: intent.active, intent.revision)
+        try Task.checkCancellation()
+        let currentID = await currentClientPublicId
+        guard isConnected, connectionEpoch == epoch, presenceIntent?.revision == intent.revision,
+              response.revision == intent.revision, response.isOnline == intent.active,
+              !response.connectionId.isEmpty, response.clientPublicId == intent.clientID,
+              response.clientPublicId == currentID else { return }
+        confirmedPresence = response
+        emit(.windowPresenceChanged(response))
+    }
+
+    private func restorePresence() {
+        if let intent = presenceIntent {
+            Task { try? await self.publishWindowPresence(intent) }
+        }
+        Task { await self.refreshAudience() }
+    }
     private func configure() async {
         if let setupTask { await setupTask.value; return }
         let task = Task { [self, connection] in
             await connection.onClosed { [weak self] _ in await self?.changeState(.disconnected) }
             await connection.onReconnecting { [weak self] _ in await self?.changeState(.reconnecting) }
             await connection.onReconnected { [weak self] in await self?.reconnected() }
+            await connection.on("OnlineClientCountChanged") { [weak self] (count: OnlineClientCount) async -> Void in
+                await self?.applyOnlineClientCount(count)
+            }
             await connection.on("EntityViewersCountUpdated") { [weak self] (type: String, id: String, count: Int) async -> Void in
                 guard let id = UUID(uuidString: id) else { return }
                 await self?.emit(.entityViewersCountChanged(entityType: type, entityId: id, count: count))
@@ -130,7 +233,9 @@ public actor MizonSocket {
         await task.value
     }
     private func reconnected() async {
+        guard state == .reconnecting else { return }
         changeState(.connected)
+        restorePresence()
         if let entity = currentEntity {
             do { try await connection.invoke(method: "JoinEntity", arguments: entity.type, entity.id) }
             catch { emit(.error(error.localizedDescription)) }
@@ -147,6 +252,7 @@ public actor MizonSocket {
             try await self.connection.start()
             guard self.generation == identity else { throw CancellationError() }
             self.changeState(.connected)
+            self.restorePresence()
         }
         startTask = task
         do { try await task.value; if generation == identity { startTask = nil } }
@@ -170,8 +276,13 @@ public actor MizonSocket {
     }
     public func unregisterDevice() async throws { if isConnected { try await connection.invoke(method: "UnregisterDevice") } }
     public func stop() async {
-        generation = UUID(); startTask?.cancel(); startTask = nil
-        await connection.stop(); changeState(.disconnected)
+        generation = UUID()
+        startTask?.cancel()
+        startTask = nil
+        presenceIntent = nil
+        if state == .disconnected { emit(.stateChanged(.disconnected)) }
+        else { changeState(.disconnected) }
+        await connection.stop()
     }
     public func dispose() async {
         await stop()

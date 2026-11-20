@@ -2,7 +2,7 @@
 
 نسخهٔ نیتیو Swift از [Mizon.API.DotNet](https://github.com/Shahesmaeili/Mizon.API.DotNet)، با حفظ دو ماژول و پوشه‌بندی Requests، Responses و Operations. این پروژه مانند مرجع، **SDK ارتباط با API** است؛ رابط کاربری اپلیکیشن در ریپوی مرجع وجود ندارد.
 
-Native Swift 6 SDK for macOS, iPhone/iPad and Apple Watch. Ported from source commit [`5e7541a`](https://github.com/Shahesmaeili/Mizon.API.DotNet/commit/5e7541aac20a64315e3985d166236068c243c624).
+Native Swift 6 SDK for macOS, iPhone/iPad and Apple Watch. Contract inventory verified against [`35c9b29`](https://github.com/Shahesmaeili/Mizon.API.DotNet/commit/35c9b294dbe628367b8f3de64f9e2ba363cb3101).
 
 - Swift tools 6.4+, Swift 6 strict concurrency; compatible with the Swift 6.4.1 release line.
 - macOS 13+, iOS 16+, watchOS 9+.
@@ -137,4 +137,4 @@ Local validation used **Apple Swift 6.4 / Xcode 27.1**: 24 tests passed, plus co
 
 No live backend address or test account was supplied. Authentication against a deployed server, real hub reconnection and on-device runtime behavior still require integration testing with your backend. watchOS builds successfully with the official dependency; network/background execution remains subject to Apple's app lifecycle rules.
 
-The follow-up parity audit is recorded in [Documentation/Audit.md](Documentation/Audit.md). It includes a typed contract snapshot and round-trip fixtures for all 78 DTO types.
+The follow-up parity audit is recorded in [Documentation/Audit.md](Documentation/Audit.md). It includes a typed contract snapshot and round-trip fixtures for 115 DTO types and 44 operations.

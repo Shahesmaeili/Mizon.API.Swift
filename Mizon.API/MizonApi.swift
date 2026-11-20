@@ -5,11 +5,15 @@ import CryptoKit
 public actor MizonApi {
     private let session: URLSession
     private var token: String?
+    private let languageProvider: (@Sendable () -> String?)?
     private var informationHeaders: [String: String] = [:]
     private struct CacheEntry { var data: Data; var expires: Date }
     private var cache: [String: CacheEntry] = [:]
     private var credentialGeneration: UInt64 = 0
-    public init(session: URLSession = .shared) { self.session = session }
+    public init(session: URLSession = .shared, languageProvider: (@Sendable () -> String?)? = nil) {
+        self.session = session
+        self.languageProvider = languageProvider
+    }
     public func setToken(_ token: String) throws {
         guard !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw BaseApiError(code: 401, title: "Token cannot be empty")
@@ -34,7 +38,7 @@ public actor MizonApi {
             try Task.checkCancellation()
             let request = try makeRequest(descriptor)
             let generation = credentialGeneration
-            let key = cacheKey(request)
+            let key = cacheKey(request, responseType: Response.self)
             cache = cache.filter { $0.value.expires > Date() }
             if descriptor.clientCacheStrategy != .disabled, let entry = cache[key] {
                 var response = try MizonJSON.decoder().decode(BaseApiResponse<Response>.self, from: entry.data)
@@ -93,6 +97,13 @@ public actor MizonApi {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         for (key, value) in informationHeaders { request.setValue(value, forHTTPHeaderField: key) }
+        if let language = languageProvider?(), !language.isEmpty {
+            request.setValue(language, forHTTPHeaderField: "Accept-Language")
+        } else if let language = session.configuration.httpAdditionalHeaders?.first(where: {
+            ($0.key as? String)?.caseInsensitiveCompare("Accept-Language") == .orderedSame
+        })?.value as? String {
+            request.setValue(language, forHTTPHeaderField: "Accept-Language")
+        }
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         return request
     }
@@ -126,9 +137,9 @@ public actor MizonApi {
         }
         return components.url!
     }
-    private func cacheKey(_ request: URLRequest) -> String {
+    private func cacheKey<Response>(_ request: URLRequest, responseType: Response.Type) -> String {
         let headers = (request.allHTTPHeaderFields ?? [:]).sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: "\n")
-        let text = "\(request.httpMethod ?? "GET")|\(request.url!.absoluteString)|\(headers)|\(credentialGeneration)"
+        let text = "\(request.httpMethod ?? "GET")|\(request.url!.absoluteString)|\(headers)|\(credentialGeneration)|\(String(reflecting: responseType))"
         var data = Data(text.utf8); data.append(request.httpBody ?? Data())
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }

@@ -4,6 +4,57 @@ import MizonAPI
 import MizonAPIClient
 
 struct OperationParityTests {
+    @Test func accountOperationsUseEndpointCatalogAndControlTokenUpdates() {
+        let endpoints = Endpoints(baseURL: URL(string: "https://example.com/api")!)
+        let request = RegisterRequest(firstName: "Ali", lastName: "Test", username: "ali.test",
+                                      emailAddress: "ali@example.com", password: "test-only")
+        let register = RegisterOperation(request, endpoints: endpoints).apiRequest
+        #expect(register.endpoint == endpoints.clients.register)
+        #expect(register.endpoint.path == "/api/Clients/Register")
+        #expect(register.httpMethod == .POST)
+        #expect(!register.needAuthorized)
+        #expect(register.clientCacheStrategy == .disabled)
+        #expect(register.propertyForToken != nil)
+        #expect(RegisterOperation(request, updateToken: false).apiRequest.propertyForToken == nil)
+        #expect(LoginOperation(.init(), updateToken: false).apiRequest.propertyForToken == nil)
+    }
+
+    @Test func recentlyAddedOperationsMatchTheDotNetContract() {
+        let endpoints = Endpoints(baseURL: URL(string: "https://example.com/api")!)
+        func check<Request, Response>(_ request: MizonApiRequest<Request, Response>, path: String, method: HttpMethod) {
+            #expect(request.endpoint.path == path)
+            #expect(request.httpMethod == method)
+            #expect(request.needAuthorized)
+            #expect(request.clientCacheStrategy == .disabled)
+        }
+        check(ClientMoodOperation(ClientMoodRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Clients/ClientMood", method: .POST)
+        check(ClientMoodTypesOperation(ClientMoodTypesRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Clients/ClientMoodTypes", method: .GET)
+        check(ClientProfileOperation(ClientProfileRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Clients/ClientProfile", method: .GET)
+        check(FollowingActivitiesOperation(FollowingActivitiesRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Clients/FollowingActivities", method: .POST)
+        check(MusicFeaturesOperation(MusicFeaturesRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Musics/MusicFeatures", method: .POST)
+        check(MusicLibraryOperation(MusicLibraryRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Musics/MusicLibrary", method: .POST)
+        check(MusicLikeOperation(MusicLikeRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Musics/MusicLike", method: .POST)
+        check(MusicPlayOperation(MusicPlayRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Musics/MusicPlay", method: .POST)
+        check(MusicPlaylistDetailsOperation(MusicPlaylistDetailsRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Musics/MusicPlaylistDetails", method: .POST)
+        check(FeaturedPersonsOperation(FeaturedPersonsRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Persons/FeaturedPersons", method: .GET)
+        check(PersonFollowOperation(PersonFollowRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Persons/PersonFollow", method: .POST)
+        check(PersonMusicsOperation(PersonMusicsRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Persons/PersonMusics", method: .GET)
+        check(PersonProfileOperation(PersonProfileRequest(), endpoints: endpoints).apiRequest,
+              path: "/api/Persons/PersonProfile", method: .GET)
+    }
+
     @Test func everyOperationMatchesDotNetEndpointAndMethod() {
         let endpoints = Endpoints(baseURL: URL(string: "https://example.com/api")!)
         let op0 = LoginOperation(LoginRequest(), endpoints: endpoints).apiRequest
@@ -11,24 +62,24 @@ struct OperationParityTests {
         #expect(op0.httpMethod == .POST)
         #expect(op0.needAuthorized == false)
         #expect(op0.callTimeoutDuration == 10)
-        #expect(op0.maximumClientCacheDuration == 5)
-        #expect(op0.clientCacheStrategy == .enabledOnDuplicateRequest)
+        #expect(op0.maximumClientCacheDuration == 300)
+        #expect(op0.clientCacheStrategy == .disabled)
         #expect(op0.compressionMethod == .gzip)
         let op1 = LogoutOperation(LogoutRequest(), endpoints: endpoints).apiRequest
         #expect(op1.endpoint.path == "/api/Clients/Logout")
         #expect(op1.httpMethod == .POST)
         #expect(op1.needAuthorized == true)
         #expect(op1.callTimeoutDuration == 10)
-        #expect(op1.maximumClientCacheDuration == 5)
-        #expect(op1.clientCacheStrategy == .enabledOnDuplicateRequest)
+        #expect(op1.maximumClientCacheDuration == 300)
+        #expect(op1.clientCacheStrategy == .disabled)
         #expect(op1.compressionMethod == .gzip)
         let op2 = MeOperation(MeRequest(), endpoints: endpoints).apiRequest
         #expect(op2.endpoint.path == "/api/Clients/Me")
         #expect(op2.httpMethod == .GET)
         #expect(op2.needAuthorized == true)
         #expect(op2.callTimeoutDuration == 10)
-        #expect(op2.maximumClientCacheDuration == 10)
-        #expect(op2.clientCacheStrategy == .enabledOnDuplicateRequest)
+        #expect(op2.maximumClientCacheDuration == 300)
+        #expect(op2.clientCacheStrategy == .disabled)
         #expect(op2.compressionMethod == .gzip)
         let op3 = MediaOperation(MediaRequest(), endpoints: endpoints).apiRequest
         #expect(op3.endpoint.path == "/api/Medias/Media")
@@ -209,7 +260,7 @@ struct OperationParityTests {
         #expect(op25.needAuthorized == true)
         #expect(op25.callTimeoutDuration == 10)
         #expect(op25.maximumClientCacheDuration == 300)
-        #expect(op25.clientCacheStrategy == .enabledOnDuplicateRequest)
+        #expect(op25.clientCacheStrategy == .disabled)
         #expect(op25.compressionMethod == .gzip)
         let op26 = StoryCreateOperation(StoryCreateRequest(), endpoints: endpoints).apiRequest
         #expect(op26.endpoint.path == "/api/Stories/StoryCreate")

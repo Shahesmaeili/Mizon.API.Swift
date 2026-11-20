@@ -118,7 +118,14 @@ struct MizonAPITests {
             #expect(output.prefix(Int(z.total_out)) == source)
         }
     }
-    @Test func tokenExtractionAndAuthenticatedCache() async throws {
+    @Test func transportSendsApplicationLanguage() async throws {
+        let api = MizonApi(languageProvider: { "fa-IR" })
+        try await api.setToken("test-only")
+        let request = try await api.makeRequest(MeOperation(.init()).apiRequest)
+        #expect(request.value(forHTTPHeaderField: "Accept-Language") == "fa-IR")
+    }
+
+    @Test func tokenExtractionAndUncachedCurrentAccount() async throws {
         let session = mockSession { request in
             if request.url!.path.hasSuffix("Login") { return (200, Data(#"{"content":{"accessToken":"abc","refreshToken":"r"}}"#.utf8), [:]) }
             return (200, Data(#"{"content":{"firstName":"Ali","emailAddress":"test@example.com"}}"#.utf8), [:])
@@ -130,7 +137,7 @@ struct MizonAPITests {
         #expect(await api.getToken() == "abc")
         let first = await api.sendRequest(MeOperation(MeRequest()))
         let second = await api.sendRequest(MeOperation(MeRequest()))
-        #expect(!first.isFromCache); #expect(second.isFromCache)
+        #expect(!first.isFromCache); #expect(!second.isFromCache)
         try await api.setToken("other-user")
         #expect(await api.sendRequest(MeOperation(MeRequest())).isFromCache == false)
         await api.clearToken()

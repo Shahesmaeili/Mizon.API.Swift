@@ -9,8 +9,9 @@ public struct MeResponse: IApiResponse {
     public var emailAddress: String
     public var emailAddressIsVerified: Bool
     public var meProfile: MeProfileResponse?
+    public var currentMood: ClientMoodItemResponse?
 
-    public init(firstName: String = "", lastName: String = "", username: String? = nil, nickName: String? = nil, emailAddress: String = "", emailAddressIsVerified: Bool = false, meProfile: MeProfileResponse? = nil) {
+    public init(firstName: String = "", lastName: String = "", username: String? = nil, nickName: String? = nil, emailAddress: String = "", emailAddressIsVerified: Bool = false, meProfile: MeProfileResponse? = nil, currentMood: ClientMoodItemResponse? = nil) {
         self.firstName = firstName
         self.lastName = lastName
         self.username = username
@@ -18,6 +19,7 @@ public struct MeResponse: IApiResponse {
         self.emailAddress = emailAddress
         self.emailAddressIsVerified = emailAddressIsVerified
         self.meProfile = meProfile
+        self.currentMood = currentMood
     }
 
     enum CodingKeys: String, CodingKey {
@@ -28,6 +30,7 @@ public struct MeResponse: IApiResponse {
         case emailAddress
         case emailAddressIsVerified
         case meProfile
+        case currentMood
     }
 
     public init(from decoder: any Decoder) throws {
@@ -39,6 +42,7 @@ public struct MeResponse: IApiResponse {
         emailAddress = try values.decodeIfPresent(String.self, forKey: .emailAddress) ?? ""
         emailAddressIsVerified = try values.decodeIfPresent(Bool.self, forKey: .emailAddressIsVerified) ?? false
         meProfile = try values.decodeIfPresent(MeProfileResponse.self, forKey: .meProfile)
+        currentMood = try values.decodeIfPresent(ClientMoodItemResponse.self, forKey: .currentMood)
     }
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -49,6 +53,7 @@ public struct MeResponse: IApiResponse {
         try c.encode(emailAddress, forKey: .emailAddress)
         try c.encode(emailAddressIsVerified, forKey: .emailAddressIsVerified)
         try c.encode(meProfile, forKey: .meProfile)
+        try c.encodeIfPresent(currentMood, forKey: .currentMood)
     }
 
 }
