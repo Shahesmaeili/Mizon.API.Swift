@@ -52,9 +52,11 @@ public actor MediaDownloader {
     private let http: URLSession
     private let cacheRoot: URL
     private var active: Set<URL> = []
+    private var publicPieceSession: URLSession?
     public init(session: URLSession = .shared, cacheRoot: URL) {
         self.http = session; self.cacheRoot = cacheRoot.standardizedFileURL
     }
+    deinit { publicPieceSession?.invalidateAndCancel() }
     public func getCachedFilePath(_ info: MediaResponse) throws -> URL {
         func component(_ value: String) throws -> String {
             guard !value.isEmpty, value != ".", value != "..", !value.contains("/"), !value.contains("\\"), !value.contains("\0") else {
@@ -86,6 +88,62 @@ public actor MediaDownloader {
     /// Downloads HTTPS storage directly and resolves server-local files through the authenticated API.
     public func downloadToCache(_ info: MediaResponse, api: MizonApi, endpoints: Endpoints, session: DownloadSession? = nil,
                                 progress: (@Sendable (MediaDownloadProgress) -> Void)? = nil) async throws -> URL {
+        let source = try await registeredSource(for: info, api: api, endpoints: endpoints)
+        return try await downloadToCache(info, source: source, session: session, progress: progress)
+    }
+
+    /// Returns a trusted piece manifest when the media origin permits sharing and the table matches this file version.
+    public func peerManifest(for info: MediaResponse, api: MizonApi, endpoints: Endpoints) async throws -> VerifiedMediaManifest? {
+        guard VerifiedMediaManifest.supports(info) else { return nil }
+        let operation = PeerMediaManifestOperation(.init(mediaPublicId: info.mediaPublicId), endpoints: endpoints)
+        guard let response = try await api.readTrustedMediaManifest(operation.apiRequest, baseURL: endpoints.baseURL,
+            limit: VerifiedMediaManifest.maximumEnvelopeBytes), let manifest = VerifiedMediaManifest(fileHash: response.fileHash,
+                fileSize: response.fileSize, chunkSize: response.chunkSize, pieceSha256: response.pieceSha256),
+              manifest.matches(info) else { return nil }
+        return manifest
+    }
+
+    /// Reads a bounded piece from its origin and verifies its SHA-256 before returning bytes.
+    public func readOriginPiece(for info: MediaResponse, manifest: VerifiedMediaManifest, index: Int, api: MizonApi,
+                                endpoints: Endpoints) async throws -> Data {
+        try Task.checkCancellation()
+        guard manifest.matches(info), let range = manifest.range(for: index) else {
+            throw BaseApiError(code: 102, title: "Invalid verified media piece")
+        }
+        let generation = try await api.mediaCredentialGeneration()
+        let source = try await registeredSource(for: info, api: api, endpoints: endpoints, credential: generation)
+        let data: Data
+        switch source {
+        case .managed(let api, let endpoint, let baseURL, let credential):
+            data = try await api.readManagedMediaRange(range, fileSize: info.fileSize, from: endpoint,
+                                                       apiBaseURL: baseURL, credential: credential)
+        case .direct(let url):
+            var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
+            request.assumesHTTP3Capable = true
+            request.httpShouldHandleCookies = false
+            data = try await BoundedMediaTransport.readRange(range, fileSize: info.fileSize, request: request, session: uncredentialedPieceSession())
+        }
+        try await api.verifyMediaCredentialGeneration(generation)
+        guard manifest.verify(data, at: index) else { throw BaseApiError(code: 102, title: "Media piece verification failed") }
+        return data
+    }
+
+    private func uncredentialedPieceSession() -> URLSession {
+        if let publicPieceSession { return publicPieceSession }
+        // Keep the injected public network configuration and remove session credentials and cached state.
+        let configuration = http.configuration
+        configuration.httpAdditionalHeaders = nil
+        configuration.httpShouldSetCookies = false
+        configuration.httpCookieStorage = nil
+        configuration.urlCredentialStorage = nil
+        configuration.urlCache = nil
+        let session = URLSession(configuration: configuration)
+        publicPieceSession = session
+        return session
+    }
+
+    private func registeredSource(for info: MediaResponse, api: MizonApi, endpoints: Endpoints,
+                                  credential: UInt64? = nil) async throws -> Source {
         guard let storageURL = URL(string: info.storagePath) else {
             throw BaseApiError(code: 102, title: "Invalid media storage URL")
         }
@@ -94,16 +152,15 @@ public actor MediaDownloader {
                   storageURL.user == nil, storageURL.password == nil else {
                 throw BaseApiError(code: 102, title: "Invalid media storage URL")
             }
-            return try await downloadToCache(info, storageURL: storageURL, session: session, progress: progress)
+            return .direct(storageURL)
         }
         guard info.fileSize > 0, var route = URLComponents(url: endpoints.medias.mediaContent, resolvingAgainstBaseURL: false) else {
             throw BaseApiError(code: 102, title: "Invalid registered media")
         }
         route.queryItems = [URLQueryItem(name: "MediaPublicId", value: info.mediaPublicId.uuidString.lowercased())]
         guard let endpoint = route.url else { throw BaseApiError(code: 102, title: "Invalid media endpoint") }
-        let credential = try await api.mediaCredentialGeneration()
-        let source = Source.managed(api: api, endpoint: endpoint, baseURL: endpoints.baseURL, credential: credential)
-        return try await downloadToCache(info, source: source, session: session, progress: progress)
+        if let credential { return .managed(api: api, endpoint: endpoint, baseURL: endpoints.baseURL, credential: credential) }
+        return try await .managed(api: api, endpoint: endpoint, baseURL: endpoints.baseURL, credential: api.mediaCredentialGeneration())
     }
 
     private func downloadToCache(_ info: MediaResponse, source: Source, session: DownloadSession?,

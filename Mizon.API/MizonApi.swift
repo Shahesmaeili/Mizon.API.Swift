@@ -95,57 +95,71 @@ public actor MizonApi {
         return credentialGeneration
     }
 
-    package func readManagedMediaRange(_ range: ClosedRange<Int64>, fileSize: Int64, from endpoint: URL,
-                                       apiBaseURL: URL, credential: UInt64) async throws -> Data {
-        guard let host = apiBaseURL.host?.lowercased(), !host.isEmpty,
-              apiBaseURL.scheme?.lowercased() == "https", apiBaseURL.user == nil, apiBaseURL.password == nil,
-              endpoint.scheme?.lowercased() == "https", endpoint.host?.lowercased() == host,
-              (endpoint.port ?? 443) == (apiBaseURL.port ?? 443), endpoint.user == nil, endpoint.password == nil,
-              endpoint.fragment == nil, range.lowerBound >= 0, range.upperBound < fileSize,
-              range.upperBound - range.lowerBound < 64 * 1024 * 1024 else {
-            throw BaseApiError(code: 102, title: "Invalid media origin or range")
-        }
+    package func verifyMediaCredentialGeneration(_ credential: UInt64) throws {
         guard credential == credentialGeneration else { throw CancellationError() }
+        try Task.checkCancellation()
+    }
 
-        let timeout: TimeInterval = 30
-        var request = try authorizedRequest(endpoint: endpoint, timeout: timeout, needAuthorized: true)
-        request.httpMethod = "GET"
-        request.setValue("*/*", forHTTPHeaderField: "Accept")
-        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("bytes=\(range.lowerBound)-\(range.upperBound)", forHTTPHeaderField: "Range")
-        let mediaRequest = request
-        let count = Int(range.upperBound - range.lowerBound + 1)
-        let data = try await withRequestDeadline(seconds: timeout) { [session] in
-            let (bytes, response) = try await session.bytes(for: mediaRequest, delegate: ManagedMediaNoRedirect())
+    private static func isTrustedMediaEndpoint(_ endpoint: URL, baseURL: URL) -> Bool {
+        guard let host = baseURL.host?.lowercased(), !host.isEmpty else { return false }
+        return baseURL.scheme?.lowercased() == "https" && baseURL.user == nil && baseURL.password == nil &&
+            endpoint.scheme?.lowercased() == "https" && endpoint.host?.lowercased() == host &&
+            (endpoint.port ?? 443) == (baseURL.port ?? 443) && endpoint.user == nil && endpoint.password == nil && endpoint.fragment == nil
+    }
+
+    package func readTrustedMediaManifest<Request, Response>(_ descriptor: MizonApiRequest<Request, Response>,
+                                                             baseURL: URL, limit: Int) async throws -> Response? {
+        try Task.checkCancellation()
+        guard Self.isTrustedMediaEndpoint(descriptor.endpoint, baseURL: baseURL), descriptor.httpMethod == .GET,
+              descriptor.needAuthorized, limit > 0 else { throw BaseApiError(code: 102, title: "Invalid media manifest origin") }
+        let generation = try mediaCredentialGeneration()
+        let request = try makeRequest(descriptor)
+        let result = try await withRequestDeadline(seconds: descriptor.callTimeoutDuration) { [session] in
+            let (bytes, response) = try await session.bytes(for: request, delegate: MediaNoRedirect())
             do {
                 guard let response = response as? HTTPURLResponse else {
-                    throw BaseApiError(code: 107, title: "Invalid media response")
+                    throw BaseApiError(code: 107, title: "Invalid media manifest response")
                 }
-                if response.statusCode == 206 {
-                    let expectedRange = "bytes \(range.lowerBound)-\(range.upperBound)/\(fileSize)"
-                    guard response.value(forHTTPHeaderField: "Content-Range") == expectedRange else {
-                        throw BaseApiError(code: 102, title: "Invalid media Content-Range")
-                    }
-                } else if !(response.statusCode == 200 && range.lowerBound == 0 && range.upperBound == fileSize - 1) {
-                    throw BaseApiError(code: response.statusCode, title: "Media server did not honor byte range")
+                if Self.manifestUnavailable(response.statusCode) {
+                    bytes.task.cancel()
+                    return nil as Response?
                 }
-                guard response.expectedContentLength < 0 || response.expectedContentLength == Int64(count) else {
-                    throw BaseApiError(code: 102, title: "Invalid media response length")
+                guard response.statusCode == 200 else {
+                    throw BaseApiError(code: response.statusCode, title: "Media manifest request failed")
                 }
-                var data = Data(capacity: count)
-                for try await byte in bytes {
-                    guard data.count < count else { throw BaseApiError(code: 102, title: "Oversized media response") }
-                    data.append(byte)
+                let data = try await BoundedMediaTransport.readBody(bytes, response: response, limit: limit)
+                let envelope = try MizonJSON.decoder().decode(BaseApiResponse<Response>.self, from: data)
+                if let error = envelope.error {
+                    if Self.manifestUnavailable(error.code) || error.code == 30000 { return nil }
+                    throw error
                 }
-                guard data.count == count else { throw BaseApiError(code: 102, title: "Truncated media response") }
-                return data
+                return envelope.content
             } catch {
                 bytes.task.cancel()
                 throw error
             }
         }
-        guard credential == credentialGeneration else { throw CancellationError() }
-        try Task.checkCancellation()
+        try verifyMediaCredentialGeneration(generation)
+        return result
+    }
+
+    private static func manifestUnavailable(_ code: Int) -> Bool {
+        switch code {
+        case 204, 403, 404, 405, 410, 501: true
+        default: false
+        }
+    }
+
+    package func readManagedMediaRange(_ range: ClosedRange<Int64>, fileSize: Int64, from endpoint: URL,
+                                       apiBaseURL: URL, credential: UInt64) async throws -> Data {
+        guard Self.isTrustedMediaEndpoint(endpoint, baseURL: apiBaseURL), range.lowerBound >= 0, range.upperBound < fileSize,
+              range.upperBound - range.lowerBound < 64 * 1024 * 1024 else {
+            throw BaseApiError(code: 102, title: "Invalid media origin or range")
+        }
+        try verifyMediaCredentialGeneration(credential)
+        let request = try authorizedRequest(endpoint: endpoint, timeout: 30, needAuthorized: true)
+        let data = try await BoundedMediaTransport.readRange(range, fileSize: fileSize, request: request, session: session)
+        try verifyMediaCredentialGeneration(credential)
         return data
     }
 
@@ -241,12 +255,5 @@ public actor MizonApi {
             return BaseApiError(code: url.code == .timedOut ? 106 : 107, title: url.code == .timedOut ? "Request Timeout" : "HTTP Error", details: url.localizedDescription)
         }
         return BaseApiError(code: 108, title: "Unexpected Error", details: error.localizedDescription)
-    }
-}
-
-private final class ManagedMediaNoRedirect: NSObject, URLSessionTaskDelegate, Sendable {
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
-                    newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
-        completionHandler(nil)
     }
 }

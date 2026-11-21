@@ -35,6 +35,7 @@ public enum MizonJSON {
         return decoder
     }
     private static let canonicalKeys: [String: String] = [
+        "piecesha256": "pieceSha256",
         "vote": "vote",
         "type": "type",
         "timedonly": "timedOnly",
