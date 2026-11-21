@@ -39,6 +39,16 @@ public struct DownloadChunk: Sendable {
 }
 
 public actor MediaDownloader {
+    private enum Source: Sendable {
+        case direct(URL)
+        case managed(api: MizonApi, endpoint: URL, baseURL: URL, credential: UInt64)
+
+        var localFile: URL? {
+            if case .direct(let url) = self, url.isFileURL { return url }
+            return nil
+        }
+    }
+
     private let http: URLSession
     private let cacheRoot: URL
     private var active: Set<URL> = []
@@ -70,18 +80,50 @@ public actor MediaDownloader {
     }
     public func downloadToCache(_ info: MediaResponse, storageURL: URL, session: DownloadSession? = nil,
                                 progress: (@Sendable (MediaDownloadProgress) -> Void)? = nil) async throws -> URL {
-        for try await chunk in download(info, storageURL: storageURL, session: session) {
+        try await downloadToCache(info, source: .direct(storageURL), session: session, progress: progress)
+    }
+
+    /// Downloads HTTPS storage directly and resolves server-local files through the authenticated API.
+    public func downloadToCache(_ info: MediaResponse, api: MizonApi, endpoints: Endpoints, session: DownloadSession? = nil,
+                                progress: (@Sendable (MediaDownloadProgress) -> Void)? = nil) async throws -> URL {
+        guard let storageURL = URL(string: info.storagePath) else {
+            throw BaseApiError(code: 102, title: "Invalid media storage URL")
+        }
+        if !storageURL.isFileURL {
+            guard storageURL.scheme?.lowercased() == "https", let host = storageURL.host, !host.isEmpty,
+                  storageURL.user == nil, storageURL.password == nil else {
+                throw BaseApiError(code: 102, title: "Invalid media storage URL")
+            }
+            return try await downloadToCache(info, storageURL: storageURL, session: session, progress: progress)
+        }
+        guard info.fileSize > 0, var route = URLComponents(url: endpoints.medias.mediaContent, resolvingAgainstBaseURL: false) else {
+            throw BaseApiError(code: 102, title: "Invalid registered media")
+        }
+        route.queryItems = [URLQueryItem(name: "MediaPublicId", value: info.mediaPublicId.uuidString.lowercased())]
+        guard let endpoint = route.url else { throw BaseApiError(code: 102, title: "Invalid media endpoint") }
+        let credential = try await api.mediaCredentialGeneration()
+        let source = Source.managed(api: api, endpoint: endpoint, baseURL: endpoints.baseURL, credential: credential)
+        return try await downloadToCache(info, source: source, session: session, progress: progress)
+    }
+
+    private func downloadToCache(_ info: MediaResponse, source: Source, session: DownloadSession?,
+                                 progress: (@Sendable (MediaDownloadProgress) -> Void)?) async throws -> URL {
+        for try await chunk in download(info, source: source, session: session) {
             progress?(MediaDownloadProgress(totalDownloaded: chunk.totalDownloaded, fileSize: chunk.fileSize,
                                            instantaneousSpeedBytesPerSecond: chunk.instantaneousSpeedBytesPerSecond))
         }
         return try getCachedFilePath(info)
     }
     public func download(_ info: MediaResponse, storageURL: URL, session: DownloadSession? = nil) -> AsyncThrowingStream<DownloadChunk, any Error> {
+        download(info, source: .direct(storageURL), session: session)
+    }
+
+    private func download(_ info: MediaResponse, source: Source, session: DownloadSession?) -> AsyncThrowingStream<DownloadChunk, any Error> {
         let (stream, continuation) = AsyncThrowingStream<DownloadChunk, any Error>.makeStream(bufferingPolicy: .bufferingOldest(1))
         let worker = Task {
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask { try await self.performDownload(info, storageURL: storageURL, control: session, continuation: continuation) }
+                    group.addTask { try await self.performDownload(info, source: source, control: session, continuation: continuation) }
                     if let session { group.addTask { try await session.waitForCancellation() } }
                     defer { group.cancelAll() }
                     try await group.next()
@@ -92,7 +134,7 @@ public actor MediaDownloader {
         continuation.onTermination = { @Sendable _ in worker.cancel() }
         return stream
     }
-    private func performDownload(_ info: MediaResponse, storageURL: URL, control: DownloadSession?,
+    private func performDownload(_ info: MediaResponse, source: Source, control: DownloadSession?,
                                   continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
         try Task.checkCancellation(); try await control?.checkpoint()
         let final = try getCachedFilePath(info)
@@ -101,7 +143,7 @@ public actor MediaDownloader {
         guard info.fileSize >= 0, info.chunkSize > 0, info.chunkSize <= 64 * 1024 * 1024 else {
             throw BaseApiError(code: 102, title: "Invalid media size or chunk size")
         }
-        let fileSize = storageURL.isFileURL ? Int64(try storageURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) : info.fileSize
+        let fileSize = try source.localFile.map { Int64(try $0.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) } ?? info.fileSize
         if let size = try? final.resourceValues(forKeys: [.fileSizeKey]).fileSize, Int64(size) == fileSize {
             try await yield(DownloadChunk(data: Data(), chunkIndex: 0, totalDownloaded: fileSize,
                 instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
@@ -119,17 +161,21 @@ public actor MediaDownloader {
         var index = Int(position / Int64(info.chunkSize))
         while position < fileSize {
             try Task.checkCancellation(); try await control?.checkpoint()
-            let end = min(position + Int64(info.chunkSize) - 1, fileSize - 1)
+            let end = position + min(Int64(info.chunkSize), fileSize - position) - 1
             let started = ContinuousClock.now
             var bytes: Data?
             for attempt in 0..<6 {
                 do {
-                    if storageURL.isFileURL {
+                    switch source {
+                    case .managed(let api, let endpoint, let baseURL, let credential):
+                        bytes = try await api.readManagedMediaRange(position...end, fileSize: fileSize, from: endpoint,
+                                                                    apiBaseURL: baseURL, credential: credential)
+                    case .direct(let storageURL) where storageURL.isFileURL:
                         let input = try FileHandle(forReadingFrom: storageURL)
                         defer { try? input.close() }
                         try input.seek(toOffset: UInt64(position))
                         bytes = try input.read(upToCount: Int(end - position + 1)) ?? Data()
-                    } else {
+                    case .direct(let storageURL):
                         var request = URLRequest(url: storageURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
                         request.setValue("bytes=\(position)-\(end)", forHTTPHeaderField: "Range")
                         let (data, response) = try await http.data(for: request)
@@ -148,6 +194,8 @@ public actor MediaDownloader {
                 } catch {
                     bytes = nil
                     if Task.isCancelled || error is CancellationError || attempt == 5 { throw error }
+                    if case .managed = source, let apiError = error as? BaseApiError,
+                       apiError.code != 429, !(500...599).contains(apiError.code) { throw error }
                     try await control?.checkpoint()
                     try await Task.sleep(for: .milliseconds(min(10_000, 200 * (1 << attempt))))
                 }

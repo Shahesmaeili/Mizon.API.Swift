@@ -89,6 +89,66 @@ public actor MizonApi {
         }
         return request
     }
+
+    package func mediaCredentialGeneration() throws -> UInt64 {
+        guard token != nil else { throw BaseApiError(code: 401, title: "This method needs authorization") }
+        return credentialGeneration
+    }
+
+    package func readManagedMediaRange(_ range: ClosedRange<Int64>, fileSize: Int64, from endpoint: URL,
+                                       apiBaseURL: URL, credential: UInt64) async throws -> Data {
+        guard let host = apiBaseURL.host?.lowercased(), !host.isEmpty,
+              apiBaseURL.scheme?.lowercased() == "https", apiBaseURL.user == nil, apiBaseURL.password == nil,
+              endpoint.scheme?.lowercased() == "https", endpoint.host?.lowercased() == host,
+              (endpoint.port ?? 443) == (apiBaseURL.port ?? 443), endpoint.user == nil, endpoint.password == nil,
+              endpoint.fragment == nil, range.lowerBound >= 0, range.upperBound < fileSize,
+              range.upperBound - range.lowerBound < 64 * 1024 * 1024 else {
+            throw BaseApiError(code: 102, title: "Invalid media origin or range")
+        }
+        guard credential == credentialGeneration else { throw CancellationError() }
+
+        let timeout: TimeInterval = 30
+        var request = try authorizedRequest(endpoint: endpoint, timeout: timeout, needAuthorized: true)
+        request.httpMethod = "GET"
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        request.setValue("bytes=\(range.lowerBound)-\(range.upperBound)", forHTTPHeaderField: "Range")
+        let mediaRequest = request
+        let count = Int(range.upperBound - range.lowerBound + 1)
+        let data = try await withRequestDeadline(seconds: timeout) { [session] in
+            let (bytes, response) = try await session.bytes(for: mediaRequest, delegate: ManagedMediaNoRedirect())
+            do {
+                guard let response = response as? HTTPURLResponse else {
+                    throw BaseApiError(code: 107, title: "Invalid media response")
+                }
+                if response.statusCode == 206 {
+                    let expectedRange = "bytes \(range.lowerBound)-\(range.upperBound)/\(fileSize)"
+                    guard response.value(forHTTPHeaderField: "Content-Range") == expectedRange else {
+                        throw BaseApiError(code: 102, title: "Invalid media Content-Range")
+                    }
+                } else if !(response.statusCode == 200 && range.lowerBound == 0 && range.upperBound == fileSize - 1) {
+                    throw BaseApiError(code: response.statusCode, title: "Media server did not honor byte range")
+                }
+                guard response.expectedContentLength < 0 || response.expectedContentLength == Int64(count) else {
+                    throw BaseApiError(code: 102, title: "Invalid media response length")
+                }
+                var data = Data(capacity: count)
+                for try await byte in bytes {
+                    guard data.count < count else { throw BaseApiError(code: 102, title: "Oversized media response") }
+                    data.append(byte)
+                }
+                guard data.count == count else { throw BaseApiError(code: 102, title: "Truncated media response") }
+                return data
+            } catch {
+                bytes.task.cancel()
+                throw error
+            }
+        }
+        guard credential == credentialGeneration else { throw CancellationError() }
+        try Task.checkCancellation()
+        return data
+    }
+
     private func authorizedRequest(endpoint: URL, timeout: TimeInterval, needAuthorized: Bool) throws -> URLRequest {
         guard timeout > 0, timeout.isFinite else { throw BaseApiError(code: 108, title: "Invalid timeout") }
         var request = URLRequest(url: endpoint, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
@@ -181,5 +241,12 @@ public actor MizonApi {
             return BaseApiError(code: url.code == .timedOut ? 106 : 107, title: url.code == .timedOut ? "Request Timeout" : "HTTP Error", details: url.localizedDescription)
         }
         return BaseApiError(code: 108, title: "Unexpected Error", details: error.localizedDescription)
+    }
+}
+
+private final class ManagedMediaNoRedirect: NSObject, URLSessionTaskDelegate, Sendable {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+        completionHandler(nil)
     }
 }

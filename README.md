@@ -91,15 +91,17 @@ let root = URL.cachesDirectory.appendingPathComponent("Mizon")
 let downloader = MediaDownloader(cacheRoot: root)
 let result = await api.sendRequest(MediaOperation(MediaRequest(mediaPublicId: UUID()), endpoints: endpoints))
 if let error = result.error { throw error }
-if let info = result.content, let storageURL = URL(string: info.storagePath) {
+if let info = result.content {
     let control = DownloadSession()
-    let file = try await downloader.downloadToCache(info, storageURL: storageURL, session: control)
+    let file = try await downloader.downloadToCache(info, api: api, endpoints: endpoints, session: control)
     print(file.path)
     // control.pause(), resume() and cancel() are actor methods; call with await.
 }
 ```
 
-`download(...)` exposes chunk data, byte counts, speed and local path. Downloads resume `.part` files, retry failed chunks up to six times, validate HTTP ranges and byte lengths, and promote the final file before reporting a last chunk. A storage server must honor byte ranges for multi-chunk downloads. `file://` input also works. File hash is used as the cache key, matching the source; it is not treated as a verified digest because the source does not specify its hash algorithm.
+The API-aware overload fetches HTTPS storage URLs directly. A `file://` URL in API metadata resolves to the API's authenticated `Medias/MediaContent` endpoint using the injected API session, on a server that supports registered local media. Use the explicit `storageURL:` overload for files already on the device.
+
+`download(...)` exposes chunk data, byte counts, speed and local path. Downloads resume `.part` files, retry transient failures, validate HTTP ranges and byte lengths, and promote the final file before reporting a last chunk. A storage server must honor byte ranges for multi-chunk downloads. File hash is used as the cache key, matching the source format.
 
 ## Structure and parity
 

@@ -258,6 +258,80 @@ struct MizonAPITests {
         let path = try await downloader.downloadToCache(info, storageURL: URL(string: "https://example.com/media")!)
         #expect(try Data(contentsOf: path) == bytes)
     }
+    @Test func downloaderResolvesRegisteredWindowsFilesThroughAuthenticatedAPI() async throws {
+        let id = UUID()
+        let bytes = Data((0..<40).map { UInt8($0) })
+        let endpoints = Endpoints(baseURL: URL(string: "https://mizon.example:5128")!)
+        let session = mockSession { request in
+            let url = try #require(request.url)
+            #expect(url.scheme == "https")
+            #expect(url.host == "mizon.example")
+            #expect(url.port == 5128)
+            #expect(url.path == endpoints.medias.mediaContent.path)
+            #expect(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ==
+                    [URLQueryItem(name: "MediaPublicId", value: id.uuidString.lowercased())])
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer synthetic-token")
+            #expect(request.value(forHTTPHeaderField: "Accept-Encoding") == "identity")
+            let range = try #require(request.value(forHTTPHeaderField: "Range"))
+            let positions = range.dropFirst(6).split(separator: "-").compactMap { Int($0) }
+            #expect(positions.count == 2)
+            let data = bytes.subdata(in: positions[0]..<(positions[1] + 1))
+            return (206, data, ["Content-Range": "bytes \(positions[0])-\(positions[1])/40"])
+        }
+        defer { session.invalidateAndCancel() }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let api = MizonApi(session: session)
+        try await api.setToken("synthetic-token")
+        let downloader = MediaDownloader(cacheRoot: root)
+        let info = MediaResponse(mediaPublicId: id, chunkSize: 13, fileName: "sample.jpg", fileSize: 40,
+                                 storagePath: "file:///C:/Mizon/App_Data/sample.jpg")
+        let path = try await downloader.downloadToCache(info, api: api, endpoints: endpoints)
+        #expect(path.isFileURL)
+        #expect(try Data(contentsOf: path) == bytes)
+    }
+
+    @Test func downloaderKeepsExternalHTTPSUncredentialedAndRejectsManagedRedirects() async throws {
+        let bytes = Data([0, 1, 2, 3])
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let session = mockSession { request in
+            if request.url?.host == "assets.example" {
+                #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+                return (206, bytes, ["Content-Range": "bytes 0-3/4"])
+            }
+            #expect(request.url?.host == "mizon.example")
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer synthetic-token")
+            return (307, Data(), ["Location": "https://assets.example/redirect"])
+        }
+        defer { session.invalidateAndCancel() }
+        let api = MizonApi(session: session)
+        try await api.setToken("synthetic-token")
+        let endpoints = Endpoints(baseURL: URL(string: "https://mizon.example")!)
+        let downloader = MediaDownloader(session: session, cacheRoot: root)
+        let direct = MediaResponse(chunkSize: 4, fileName: "external.png", fileSize: 4,
+                                   storagePath: "https://assets.example/media")
+        let directPath = try await downloader.downloadToCache(direct, api: api, endpoints: endpoints)
+        #expect(try Data(contentsOf: directPath) == bytes)
+
+        let local = MediaResponse(mediaPublicId: UUID(), chunkSize: 4, fileName: "local.png", fileSize: 4,
+                                  storagePath: "file:///C:/Mizon/local.png")
+        await #expect(throws: BaseApiError(code: 307, title: "Media server did not honor byte range")) {
+            try await downloader.downloadToCache(local, api: api, endpoints: endpoints)
+        }
+        #expect(try await !downloader.isCached(local))
+
+        let credential = try await api.mediaCredentialGeneration()
+        await #expect(throws: BaseApiError(code: 102, title: "Invalid media origin or range")) {
+            try await api.readManagedMediaRange(0...3, fileSize: 4, from: URL(string: "https://assets.example/media")!,
+                                                apiBaseURL: endpoints.baseURL, credential: credential)
+        }
+        await api.clearToken()
+        await #expect(throws: BaseApiError(code: 401, title: "This method needs authorization")) {
+            try await downloader.downloadToCache(local, api: api, endpoints: endpoints)
+        }
+    }
+
     @Test func downloaderCancellationAndPathSafety() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

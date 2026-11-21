@@ -51,6 +51,7 @@ public struct Endpoints: Sendable {
     public struct Medias: Sendable {
         fileprivate let endpoints: Endpoints
         public var media: URL { endpoints.url("Medias/Media") }
+        public var mediaContent: URL { endpoints.url("Medias/MediaContent") }
     }
     public var stories: Stories { Stories(endpoints: self) }
     public struct Stories: Sendable {
