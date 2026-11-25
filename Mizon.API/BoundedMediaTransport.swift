@@ -1,7 +1,7 @@
 import Foundation
 
 package enum BoundedMediaTransport {
-    static func readBody(_ bytes: URLSession.AsyncBytes, response: HTTPURLResponse, limit: Int, exact: Bool = false) async throws -> Data {
+    package static func readBody(_ bytes: URLSession.AsyncBytes, response: HTTPURLResponse, limit: Int, exact: Bool = false) async throws -> Data {
         let advertisedSize = response.expectedContentLength
         guard advertisedSize < 0 || (advertisedSize <= Int64(limit) && (!exact || advertisedSize == Int64(limit))) else {
             throw BaseApiError(code: 102, title: "Invalid media response length")

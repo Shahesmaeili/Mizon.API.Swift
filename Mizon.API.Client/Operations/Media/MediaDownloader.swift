@@ -54,14 +54,19 @@ public actor MediaDownloader {
         }
     }
 
+    private enum DirectResponse {
+        case range(Data)
+        case complete(URLSession.AsyncBytes)
+    }
+
     private let http: URLSession
     private let cacheRoot: URL
     private static let cacheLeases = CacheLeases()
-    private var publicPieceSession: URLSession?
+    private var publicStorageSession: URLSession?
     public init(session: URLSession = .shared, cacheRoot: URL) {
         self.http = session; self.cacheRoot = cacheRoot.standardizedFileURL
     }
-    deinit { publicPieceSession?.invalidateAndCancel() }
+    deinit { publicStorageSession?.invalidateAndCancel() }
 
     public func getCachedFilePath(_ info: MediaResponse) throws -> URL {
         let final = try cacheFilePath(info)
@@ -180,15 +185,15 @@ public actor MediaDownloader {
             var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
             request.assumesHTTP3Capable = true
             request.httpShouldHandleCookies = false
-            data = try await BoundedMediaTransport.readRange(range, fileSize: info.fileSize, request: request, session: uncredentialedPieceSession())
+            data = try await BoundedMediaTransport.readRange(range, fileSize: info.fileSize, request: request, session: uncredentialedStorageSession())
         }
         try await api.verifyMediaCredentialGeneration(generation)
         guard manifest.verify(data, at: index) else { throw BaseApiError(code: 102, title: "Media piece verification failed") }
         return data
     }
 
-    private func uncredentialedPieceSession() -> URLSession {
-        if let publicPieceSession { return publicPieceSession }
+    private func uncredentialedStorageSession() -> URLSession {
+        if let publicStorageSession { return publicStorageSession }
         // Keep the injected public network configuration and remove session credentials and cached state.
         let configuration = http.configuration
         configuration.httpAdditionalHeaders = nil
@@ -197,7 +202,7 @@ public actor MediaDownloader {
         configuration.urlCredentialStorage = nil
         configuration.urlCache = nil
         let session = URLSession(configuration: configuration)
-        publicPieceSession = session
+        publicStorageSession = session
         return session
     }
 
@@ -207,8 +212,7 @@ public actor MediaDownloader {
             throw BaseApiError(code: 102, title: "Invalid media storage URL")
         }
         if !storageURL.isFileURL {
-            guard storageURL.scheme?.lowercased() == "https", let host = storageURL.host, !host.isEmpty,
-                  storageURL.user == nil, storageURL.password == nil else {
+            guard HTTPSStorageRedirects.allows(storageURL) else {
                 throw BaseApiError(code: 102, title: "Invalid media storage URL")
             }
             return .direct(storageURL)
@@ -224,7 +228,7 @@ public actor MediaDownloader {
 
     private func downloadToCache(_ info: MediaResponse, source: Source, session: DownloadSession?,
                                  progress: (@Sendable (MediaDownloadProgress) -> Void)?) async throws -> URL {
-        let (stream, worker) = startDownload(info, source: source, session: session)
+        let (stream, worker) = startDownload(info, source: source, session: session, allowsCompleteHTTPS: true)
         do {
             for try await chunk in stream {
                 progress?(MediaDownloadProgress(totalDownloaded: chunk.totalDownloaded, fileSize: chunk.fileSize,
@@ -240,16 +244,19 @@ public actor MediaDownloader {
         return try getCachedFilePath(info)
     }
     public func download(_ info: MediaResponse, storageURL: URL, session: DownloadSession? = nil) -> AsyncThrowingStream<DownloadChunk, any Error> {
-        startDownload(info, source: .direct(storageURL), session: session).stream
+        startDownload(info, source: .direct(storageURL), session: session, allowsCompleteHTTPS: false).stream
     }
 
-    private func startDownload(_ info: MediaResponse, source: Source, session: DownloadSession?)
+    private func startDownload(_ info: MediaResponse, source: Source, session: DownloadSession?, allowsCompleteHTTPS: Bool)
         -> (stream: AsyncThrowingStream<DownloadChunk, any Error>, worker: Task<Void, Never>) {
         let (stream, continuation) = AsyncThrowingStream<DownloadChunk, any Error>.makeStream(bufferingPolicy: .bufferingOldest(1))
         let worker = Task {
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask { try await self.performDownload(info, source: source, control: session, continuation: continuation) }
+                    group.addTask {
+                        try await self.performDownload(info, source: source, control: session,
+                                                       allowsCompleteHTTPS: allowsCompleteHTTPS, continuation: continuation)
+                    }
                     if let session { group.addTask { try await session.waitForCancellation() } }
                     defer { group.cancelAll() }
                     try await group.next()
@@ -261,6 +268,7 @@ public actor MediaDownloader {
         return (stream, worker)
     }
     private func performDownload(_ info: MediaResponse, source: Source, control: DownloadSession?,
+                                  allowsCompleteHTTPS: Bool,
                                   continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
         try Task.checkCancellation(); try await control?.checkpoint()
         let final = try getCachedFilePath(info)
@@ -290,6 +298,7 @@ public actor MediaDownloader {
             let end = position + min(Int64(info.chunkSize), fileSize - position) - 1
             let started = ContinuousClock.now
             var bytes: Data?
+            var complete: URLSession.AsyncBytes?
             for attempt in 0..<6 {
                 do {
                     switch source {
@@ -302,30 +311,30 @@ public actor MediaDownloader {
                         try input.seek(toOffset: UInt64(position))
                         bytes = try input.read(upToCount: Int(end - position + 1)) ?? Data()
                     case .direct(let storageURL):
-                        var request = URLRequest(url: storageURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
-                        request.setValue("bytes=\(position)-\(end)", forHTTPHeaderField: "Range")
-                        let (data, response) = try await http.data(for: request)
-                        guard let response = response as? HTTPURLResponse else { throw BaseApiError(code: 107, title: "Invalid storage response") }
-                        if response.statusCode == 206 {
-                            guard response.value(forHTTPHeaderField: "Content-Range") == "bytes \(position)-\(end)/\(fileSize)" else {
-                                throw BaseApiError(code: 102, title: "Invalid Content-Range")
-                            }
-                        } else if !(response.statusCode == 200 && position == 0 && end == fileSize - 1) {
-                            throw BaseApiError(code: response.statusCode, title: "Storage did not honor byte range")
+                        switch try await readDirectResponse(storageURL, range: position...end,
+                                                             fileSize: fileSize, allowsCompleteHTTPS: allowsCompleteHTTPS) {
+                        case .range(let data): bytes = data
+                        case .complete(let body): complete = body
                         }
-                        bytes = data
                     }
+                    if complete != nil { break }
                     guard bytes?.count == Int(end - position + 1) else { throw BaseApiError(code: 102, title: "Truncated media chunk") }
                     break
                 } catch {
                     bytes = nil
                     if Task.isCancelled || error is CancellationError || attempt == 5 { throw error }
-                    if case .direct = source, (error as? BaseApiError)?.code == 200 { throw error }
+                    if case .direct = source, let apiError = error as? BaseApiError,
+                       apiError.code != 429, !(500...599).contains(apiError.code) { throw error }
                     if case .managed = source, let apiError = error as? BaseApiError,
                        apiError.code != 429, !(500...599).contains(apiError.code) { throw error }
                     try await control?.checkpoint()
                     try await Task.sleep(for: .milliseconds(min(10_000, 200 * (1 << attempt))))
                 }
+            }
+            if let complete {
+                try await writeCompleteResponse(complete, fileSize: fileSize, output: output, partial: partial,
+                                                final: final, control: control, continuation: continuation)
+                return
             }
             guard let data = bytes else { throw BaseApiError(code: 102, title: "Missing media data") }
             try Task.checkCancellation(); try await control?.checkpoint()
@@ -346,6 +355,89 @@ public actor MediaDownloader {
                 instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
         }
     }
+
+    private func readDirectResponse(_ url: URL, range: ClosedRange<Int64>, fileSize: Int64,
+                                    allowsCompleteHTTPS: Bool) async throws -> DirectResponse {
+        let isHTTPS = HTTPSStorageRedirects.allows(url)
+        guard isHTTPS || (url.scheme?.lowercased() == "http" && url.host?.isEmpty == false && url.user == nil && url.password == nil) else {
+            throw BaseApiError(code: 102, title: "Invalid media storage URL")
+        }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
+        request.assumesHTTP3Capable = isHTTPS
+        request.httpShouldHandleCookies = false
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        request.setValue("bytes=\(range.lowerBound)-\(range.upperBound)", forHTTPHeaderField: "Range")
+        let (body, response) = try await uncredentialedStorageSession().bytes(for: request, delegate: HTTPSStorageRedirects())
+        do {
+            guard let response = response as? HTTPURLResponse else {
+                throw BaseApiError(code: 107, title: "Invalid storage response")
+            }
+            if response.statusCode == 206 {
+                let contentRange = "bytes \(range.lowerBound)-\(range.upperBound)/\(fileSize)"
+                guard response.value(forHTTPHeaderField: "Content-Range") == contentRange else {
+                    throw BaseApiError(code: 102, title: "Invalid Content-Range")
+                }
+            } else if response.statusCode == 200 && allowsCompleteHTTPS && isHTTPS {
+                let advertisedSize = response.expectedContentLength
+                guard response.value(forHTTPHeaderField: "Content-Range") == nil,
+                      advertisedSize < 0 || advertisedSize == fileSize else {
+                    throw BaseApiError(code: 102, title: "Invalid media response length")
+                }
+                return .complete(body)
+            } else if !(response.statusCode == 200 && range.lowerBound == 0 && range.upperBound == fileSize - 1) {
+                throw BaseApiError(code: response.statusCode, title: "Storage did not honor byte range")
+            }
+            let count = Int(range.upperBound - range.lowerBound + 1)
+            return .range(try await BoundedMediaTransport.readBody(body, response: response, limit: count, exact: true))
+        } catch {
+            body.task.cancel()
+            throw error
+        }
+    }
+
+    private func writeCompleteResponse(_ body: URLSession.AsyncBytes, fileSize: Int64, output: FileHandle,
+                                       partial: URL, final: URL, control: DownloadSession?,
+                                       continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
+        defer { body.task.cancel() }
+        try Task.checkCancellation(); try await control?.checkpoint()
+        try output.truncate(atOffset: 0)
+        try output.seek(toOffset: 0)
+        let blockSize = 256 * 1024
+        var block = Data(capacity: Int(min(Int64(blockSize), fileSize)))
+        var received: Int64 = 0
+        var index = 0
+        var started = ContinuousClock.now
+        for try await byte in body {
+            guard received < fileSize else { throw BaseApiError(code: 102, title: "Oversized media response") }
+            block.append(byte)
+            received += 1
+            // Hold the last block until EOF proves that the response has exactly the registered length.
+            if block.count == blockSize && received < fileSize {
+                try Task.checkCancellation(); try await control?.checkpoint()
+                try output.write(contentsOf: block)
+                let duration = started.duration(to: .now)
+                let seconds = Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
+                try await yield(DownloadChunk(data: block, chunkIndex: index, totalDownloaded: received,
+                    instantaneousSpeedBytesPerSecond: seconds > 0 ? Double(block.count) / seconds : 0,
+                    fileSize: fileSize, path: partial, isLastChunk: false), to: continuation)
+                index += 1
+                block = Data(capacity: Int(min(Int64(blockSize), fileSize - received)))
+                started = .now
+            }
+        }
+        guard received == fileSize else { throw BaseApiError(code: 102, title: "Truncated media response") }
+        try Task.checkCancellation(); try await control?.checkpoint()
+        try output.write(contentsOf: block)
+        try output.synchronize()
+        try promote(partial, to: final)
+        let duration = started.duration(to: .now)
+        let seconds = Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
+        try await yield(DownloadChunk(data: block, chunkIndex: index, totalDownloaded: received,
+            instantaneousSpeedBytesPerSecond: seconds > 0 ? Double(block.count) / seconds : 0,
+            fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
+    }
+
     private func yield(_ chunk: DownloadChunk, to continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
         // Keep at most one chunk queued. A slow consumer must not buffer a whole file.
         while true {
@@ -359,8 +451,7 @@ public actor MediaDownloader {
         }
     }
     private func promote(_ partial: URL, to final: URL) throws {
-        if FileManager.default.fileExists(atPath: final.path) { try FileManager.default.removeItem(at: final) }
-        try FileManager.default.moveItem(at: partial, to: final)
+        if rename(partial.path, final.path) != 0 { throw Self.cacheFileError() }
     }
 
     private final class CacheLeases: @unchecked Sendable {
@@ -381,5 +472,25 @@ public actor MediaDownloader {
         func release(_ paths: Set<URL>) {
             lock.withLock { leased.subtract(paths) }
         }
+    }
+}
+
+private final class HTTPSStorageRedirects: NSObject, URLSessionTaskDelegate, Sendable {
+    static func allows(_ url: URL?) -> Bool {
+        guard let url else { return false }
+        return url.scheme?.lowercased() == "https" && url.host?.isEmpty == false && url.user == nil && url.password == nil
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+        guard Self.allows(request.url) else { completionHandler(nil); return }
+        var redirected = request
+        redirected.httpShouldHandleCookies = false
+        redirected.assumesHTTP3Capable = true
+        redirected.setValue(nil, forHTTPHeaderField: "Authorization")
+        redirected.setValue(nil, forHTTPHeaderField: "Cookie")
+        redirected.setValue(task.originalRequest?.value(forHTTPHeaderField: "Range"), forHTTPHeaderField: "Range")
+        redirected.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        completionHandler(redirected)
     }
 }

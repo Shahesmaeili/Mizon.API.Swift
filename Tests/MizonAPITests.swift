@@ -23,10 +23,12 @@ private final class MockProtocol: URLProtocol, @unchecked Sendable {
     }
     override func stopLoading() {}
 }
-private func mockSession(_ handler: @escaping @Sendable (URLRequest) throws -> (Int, Data, [String: String])) -> URLSession {
+private func mockSession(additionalHeaders: [String: String] = [:],
+                         _ handler: @escaping @Sendable (URLRequest) throws -> (Int, Data, [String: String])) -> URLSession {
     MockProtocol.install(handler)
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [MockProtocol.self]
+    config.httpAdditionalHeaders = additionalHeaders
     return URLSession(configuration: config)
 }
 
@@ -427,6 +429,8 @@ private final class DripProtocol: URLProtocol, @unchecked Sendable {
             guard !stopped else { return }
             if request.url!.path.contains("search") {
                 client?.urlProtocol(self, didLoad: Data("{\"itemType\":\"Music\"}\n".utf8))
+            } else if request.url?.path == "/video" {
+                client?.urlProtocol(self, didLoad: Data(repeating: 21, count: 64 * 1024))
             } else { client?.urlProtocol(self, didLoad: Data(" ".utf8)) }
             if count < 100 { tick(count + 1) }
             else { client?.urlProtocolDidFinishLoading(self) }
@@ -608,7 +612,7 @@ extension MizonAPITests {
         #expect(!files.fileExists(atPath: partial.path))
     }
 
-    @Test func directDownloadDoesNotRetryRejectedRange() async throws {
+    @Test func directStreamingDownloadDoesNotRetryRejectedRange() async throws {
         let files = FileManager.default
         let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? files.removeItem(at: root) }
@@ -627,12 +631,116 @@ extension MizonAPITests {
             try Data([0, 0]).write(to: final.appendingPathExtension("part"))
             let origin = URL(string: "https://example.com/avatar")!
             await #expect(throws: BaseApiError(code: 200, title: "Storage did not honor byte range")) {
-                try await downloader.downloadToCache(info, storageURL: origin)
+                for try await _ in await downloader.download(info, storageURL: origin) {}
             }
 
             try await downloader.invalidateCachedDownload(info)
             let recovered = try await downloader.downloadToCache(info, storageURL: origin)
             #expect(try Data(contentsOf: recovered) == bytes)
         }
+    }
+
+    @Test func directCacheStreamsCompleteHTTPSResponseOverStalePartial() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let block = Data((0...250).map(UInt8.init))
+        var content = Data()
+        for _ in 0..<2_700 { content.append(block) }
+        let bytes = content
+        let info = MediaResponse(chunkSize: 4096, fileName: "hero.mp4", fileSize: Int64(bytes.count),
+                                 storagePath: "https://assets.example/video")
+        let (updates, progress) = AsyncStream<MediaDownloadProgress>.makeStream()
+        try await confirmation("One complete response") { received in
+            let session = mockSession(additionalHeaders: ["Authorization": "Bearer synthetic", "Cookie": "synthetic=1"]) { request in
+                received()
+                #expect(request.value(forHTTPHeaderField: "Range") == "bytes=13-4108")
+                #expect(request.value(forHTTPHeaderField: "Accept-Encoding") == "identity")
+                #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+                #expect(request.value(forHTTPHeaderField: "Cookie") == nil)
+                return (200, bytes, ["Content-Length": "\(bytes.count)"])
+            }
+            defer { session.invalidateAndCancel() }
+            let api = MizonApi(session: session)
+            try await api.setToken("synthetic")
+            let endpoints = Endpoints(baseURL: URL(string: "https://api.example")!)
+            let downloader = MediaDownloader(session: session, cacheRoot: root)
+            let final = try await downloader.getCachedFilePath(info)
+            let partial = final.appendingPathExtension("part")
+            try Data(repeating: 255, count: 13).write(to: partial)
+            try Data([0]).write(to: final)
+            let result = try await downloader.downloadToCache(info, api: api, endpoints: endpoints) {
+                progress.yield($0)
+            }
+            #expect(result == final)
+            #expect(try Data(contentsOf: final) == bytes)
+            #expect(!files.fileExists(atPath: partial.path))
+        }
+        progress.finish()
+        var position: Int64 = 0
+        var count = 0
+        for await update in updates {
+            #expect(update.totalDownloaded > position)
+            #expect(update.totalDownloaded - position <= 256 * 1024)
+            position = update.totalDownloaded
+            count += 1
+        }
+        #expect(count > 1)
+        #expect(position == info.fileSize)
+    }
+
+    @Test func directCacheRejectsTruncatedAndOversizedCompleteResponses() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let expected = 300_000
+        for delta in [-3, 3] {
+            let info = MediaResponse(chunkSize: 4096, fileName: "hero-\(delta).mp4", fileSize: Int64(expected))
+            let session = mockSession { _ in (200, Data(repeating: 5, count: expected + delta), [:]) }
+            defer { session.invalidateAndCancel() }
+            let downloader = MediaDownloader(session: session, cacheRoot: root)
+            let final = try await downloader.getCachedFilePath(info)
+            let partial = final.appendingPathExtension("part")
+            let origin = URL(string: "https://assets.example/video")!
+            let title = delta < 0 ? "Truncated media response" : "Oversized media response"
+            await #expect(throws: BaseApiError(code: 102, title: title)) {
+                try await downloader.downloadToCache(info, storageURL: origin)
+            }
+            #expect(!files.fileExists(atPath: final.path))
+            // Even when the response includes all registered bytes, its unverified last block was withheld.
+            #expect(try partial.resourceValues(forKeys: [.fileSizeKey]).fileSize == 256 * 1024)
+        }
+    }
+
+    @Test func directCacheCancellationStopsCompleteResponseBeforePromotion() async throws {
+        let session = dripSession()
+        defer { session.invalidateAndCancel() }
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let downloader = MediaDownloader(session: session, cacheRoot: root)
+        let info = MediaResponse(chunkSize: 4096, fileName: "hero.mp4", fileSize: 8 * 1024 * 1024)
+        let final = try await downloader.getCachedFilePath(info)
+        let partial = final.appendingPathExtension("part")
+        let task = Task {
+            try await downloader.downloadToCache(info, storageURL: URL(string: "https://assets.example/video")!)
+        }
+        defer { task.cancel() }
+        let limit = ContinuousClock.now.advanced(by: .seconds(2))
+        var position: Int64 = 0
+        while ContinuousClock.now < limit {
+            if let attributes = try? files.attributesOfItem(atPath: partial.path),
+               let size = attributes[.size] as? NSNumber, size.int64Value > 0 {
+                position = size.int64Value
+                break
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(position > 0 && position < info.fileSize)
+        task.cancel()
+        await #expect(throws: CancellationError.self) { try await task.value }
+        #expect(!files.fileExists(atPath: final.path))
+        try await MediaDownloader(cacheRoot: root).invalidateCachedDownload(info)
+        #expect(!files.fileExists(atPath: partial.path))
     }
 }
