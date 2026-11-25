@@ -1,5 +1,10 @@
 import Foundation
 import MizonAPI
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 public actor DownloadSession {
     public private(set) var isPaused = false
@@ -51,13 +56,21 @@ public actor MediaDownloader {
 
     private let http: URLSession
     private let cacheRoot: URL
-    private var active: Set<URL> = []
+    private static let cacheLeases = CacheLeases()
     private var publicPieceSession: URLSession?
     public init(session: URLSession = .shared, cacheRoot: URL) {
         self.http = session; self.cacheRoot = cacheRoot.standardizedFileURL
     }
     deinit { publicPieceSession?.invalidateAndCancel() }
+
     public func getCachedFilePath(_ info: MediaResponse) throws -> URL {
+        let final = try cacheFilePath(info)
+        try FileManager.default.createDirectory(at: final.deletingLastPathComponent(), withIntermediateDirectories: true)
+        return final
+    }
+
+    private func cacheFilePath(_ info: MediaResponse) throws -> URL {
+        guard cacheRoot.isFileURL else { throw BaseApiError(code: 102, title: "Invalid media cache root") }
         func component(_ value: String) throws -> String {
             guard !value.isEmpty, value != ".", value != "..", !value.contains("/"), !value.contains("\\"), !value.contains("\0") else {
                 throw BaseApiError(code: 102, title: "Invalid media cache path")
@@ -72,9 +85,55 @@ public actor MediaDownloader {
         // Symlink resolution prevents pre-existing cache symlinks from escaping the root.
         let root = cacheRoot.resolvingSymlinksInPath().path + "/"
         guard final.resolvingSymlinksInPath().path.hasPrefix(root) else { throw BaseApiError(code: 102, title: "Cache path escapes root") }
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return final
     }
+
+    /// Removes the completed file and its partial download after a caller detects unusable cached content.
+    /// Missing files are harmless. An active download of the same cache entry is left alone.
+    public func invalidateCachedDownload(_ info: MediaResponse) throws {
+        let final = try cacheFilePath(info)
+        let partial = final.appendingPathExtension("part")
+        let lease = try Self.cacheLeases.acquire(final: final, partial: partial)
+        defer { Self.cacheLeases.release(lease) }
+
+        let flags = O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC
+        var directory = open(cacheRoot.resolvingSymlinksInPath().path, flags)
+        if directory < 0 && errno == ENOENT { return }
+        guard directory >= 0 else { throw Self.cacheFileError() }
+        defer { _ = close(directory) }
+
+        let folder = final.deletingLastPathComponent()
+        // Anchor operations to open directories so a symlink cannot redirect a deletion.
+        for component in [folder.deletingLastPathComponent().lastPathComponent, folder.lastPathComponent] {
+            let child = openat(directory, component, flags)
+            if child < 0 && errno == ENOENT { return }
+            guard child >= 0 else { throw Self.cacheFileError() }
+            _ = close(directory)
+            directory = child
+        }
+
+        var present: [String] = []
+        for name in [partial.lastPathComponent, final.lastPathComponent] {
+            var metadata = stat()
+            if fstatat(directory, name, &metadata, AT_SYMLINK_NOFOLLOW) != 0 {
+                if errno == ENOENT { continue }
+                throw Self.cacheFileError()
+            }
+            guard metadata.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG) else {
+                throw BaseApiError(code: 102, title: "Invalid cached media file")
+            }
+            present.append(name)
+        }
+        for name in present {
+            // Discard the partial first so a later retry cannot promote its stale bytes.
+            if unlinkat(directory, name, 0) != 0 && errno != ENOENT { throw Self.cacheFileError() }
+        }
+    }
+
+    private static func cacheFileError() -> POSIXError {
+        POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+    }
+
     public func isCached(_ info: MediaResponse) throws -> Bool {
         let path = try getCachedFilePath(info)
         guard let size = try? path.resourceValues(forKeys: [.fileSizeKey]).fileSize else { return false }
@@ -165,17 +224,27 @@ public actor MediaDownloader {
 
     private func downloadToCache(_ info: MediaResponse, source: Source, session: DownloadSession?,
                                  progress: (@Sendable (MediaDownloadProgress) -> Void)?) async throws -> URL {
-        for try await chunk in download(info, source: source, session: session) {
-            progress?(MediaDownloadProgress(totalDownloaded: chunk.totalDownloaded, fileSize: chunk.fileSize,
-                                           instantaneousSpeedBytesPerSecond: chunk.instantaneousSpeedBytesPerSecond))
+        let (stream, worker) = startDownload(info, source: source, session: session)
+        do {
+            for try await chunk in stream {
+                progress?(MediaDownloadProgress(totalDownloaded: chunk.totalDownloaded, fileSize: chunk.fileSize,
+                                               instantaneousSpeedBytesPerSecond: chunk.instantaneousSpeedBytesPerSecond))
+            }
+            try Task.checkCancellation()
+        } catch {
+            worker.cancel()
+            // The stream can report cancellation before its producer closes the file and releases the lease.
+            await worker.value
+            throw error
         }
         return try getCachedFilePath(info)
     }
     public func download(_ info: MediaResponse, storageURL: URL, session: DownloadSession? = nil) -> AsyncThrowingStream<DownloadChunk, any Error> {
-        download(info, source: .direct(storageURL), session: session)
+        startDownload(info, source: .direct(storageURL), session: session).stream
     }
 
-    private func download(_ info: MediaResponse, source: Source, session: DownloadSession?) -> AsyncThrowingStream<DownloadChunk, any Error> {
+    private func startDownload(_ info: MediaResponse, source: Source, session: DownloadSession?)
+        -> (stream: AsyncThrowingStream<DownloadChunk, any Error>, worker: Task<Void, Never>) {
         let (stream, continuation) = AsyncThrowingStream<DownloadChunk, any Error>.makeStream(bufferingPolicy: .bufferingOldest(1))
         let worker = Task {
             do {
@@ -189,14 +258,15 @@ public actor MediaDownloader {
             } catch { continuation.finish(throwing: error) }
         }
         continuation.onTermination = { @Sendable _ in worker.cancel() }
-        return stream
+        return (stream, worker)
     }
     private func performDownload(_ info: MediaResponse, source: Source, control: DownloadSession?,
                                   continuation: AsyncThrowingStream<DownloadChunk, any Error>.Continuation) async throws {
         try Task.checkCancellation(); try await control?.checkpoint()
         let final = try getCachedFilePath(info)
-        guard active.insert(final).inserted else { throw BaseApiError(code: 102, title: "Download already in progress") }
-        defer { active.remove(final) }
+        let partial = final.appendingPathExtension("part")
+        let lease = try Self.cacheLeases.acquire(final: final, partial: partial)
+        defer { Self.cacheLeases.release(lease) }
         guard info.fileSize >= 0, info.chunkSize > 0, info.chunkSize <= 64 * 1024 * 1024 else {
             throw BaseApiError(code: 102, title: "Invalid media size or chunk size")
         }
@@ -206,7 +276,6 @@ public actor MediaDownloader {
                 instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
             return
         }
-        let partial = final.appendingPathExtension("part")
         guard partial.resolvingSymlinksInPath().path.hasPrefix(cacheRoot.resolvingSymlinksInPath().path + "/") else {
             throw BaseApiError(code: 102, title: "Invalid partial cache path")
         }
@@ -251,6 +320,7 @@ public actor MediaDownloader {
                 } catch {
                     bytes = nil
                     if Task.isCancelled || error is CancellationError || attempt == 5 { throw error }
+                    if case .direct = source, (error as? BaseApiError)?.code == 200 { throw error }
                     if case .managed = source, let apiError = error as? BaseApiError,
                        apiError.code != 429, !(500...599).contains(apiError.code) { throw error }
                     try await control?.checkpoint()
@@ -291,5 +361,25 @@ public actor MediaDownloader {
     private func promote(_ partial: URL, to final: URL) throws {
         if FileManager.default.fileExists(atPath: final.path) { try FileManager.default.removeItem(at: final) }
         try FileManager.default.moveItem(at: partial, to: final)
+    }
+
+    private final class CacheLeases: @unchecked Sendable {
+        private let lock = NSLock()
+        private var leased: Set<URL> = []
+
+        func acquire(final: URL, partial: URL) throws -> Set<URL> {
+            let paths = Set([final.resolvingSymlinksInPath(), partial.resolvingSymlinksInPath()])
+            try lock.withLock {
+                guard leased.isDisjoint(with: paths) else {
+                    throw BaseApiError(code: 102, title: "Download already in progress")
+                }
+                leased.formUnion(paths)
+            }
+            return paths
+        }
+
+        func release(_ paths: Set<URL>) {
+            lock.withLock { leased.subtract(paths) }
+        }
     }
 }

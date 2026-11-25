@@ -493,4 +493,146 @@ extension MizonAPITests {
         while let chunk = try await iterator.next() { data.append(chunk.data) }
         #expect(data == bytes)
     }
+
+    @Test func invalidatingUnusableCacheRemovesPartialAndAllowsFreshDownload() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let cache = root.appendingPathComponent("cache")
+        defer { try? files.removeItem(at: root) }
+        let downloader = MediaDownloader(cacheRoot: cache)
+        let info = MediaResponse(chunkSize: 4, fileHash: "stale", fileName: "avatar.png", fileSize: 4)
+        try await downloader.invalidateCachedDownload(info)
+        #expect(!files.fileExists(atPath: cache.path))
+
+        let final = try await downloader.getCachedFilePath(info)
+        let partial = final.appendingPathExtension("part")
+        let adjacent = final.deletingLastPathComponent().appendingPathComponent("another-avatar.png")
+        let source = root.appendingPathComponent("fresh")
+        let corrupt = Data([0, 0, 0, 0])
+        let fresh = Data([1, 2, 3, 4])
+        try corrupt.write(to: final)
+        try corrupt.write(to: partial)
+        try fresh.write(to: adjacent)
+        try fresh.write(to: source)
+        #expect(try await downloader.isCached(info))
+
+        try await downloader.invalidateCachedDownload(info)
+        try await downloader.invalidateCachedDownload(info)
+        #expect(!files.fileExists(atPath: final.path))
+        #expect(!files.fileExists(atPath: partial.path))
+        #expect(try Data(contentsOf: adjacent) == fresh)
+        let recovered = try await downloader.downloadToCache(info, storageURL: source)
+        #expect(try Data(contentsOf: recovered) == fresh)
+    }
+
+    @Test func invalidatingCacheRejectsDirectoriesAndSymlinkLeaves() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let downloader = MediaDownloader(cacheRoot: root.appendingPathComponent("cache"))
+        let info = MediaResponse(chunkSize: 4, fileHash: "stale", fileName: "avatar.png", fileSize: 4)
+        let final = try await downloader.getCachedFilePath(info)
+        let partial = final.appendingPathExtension("part")
+        let original = Data([1, 2, 3, 4])
+        try original.write(to: final)
+
+        try files.createDirectory(at: partial, withIntermediateDirectories: false)
+        let marker = partial.appendingPathComponent("marker")
+        try original.write(to: marker)
+        await #expect(throws: BaseApiError.self) { try await downloader.invalidateCachedDownload(info) }
+        #expect(try Data(contentsOf: final) == original)
+        #expect(try Data(contentsOf: marker) == original)
+
+        try files.removeItem(at: partial)
+        let outsideCache = root.appendingPathComponent("untouched")
+        try original.write(to: outsideCache)
+        try files.createSymbolicLink(at: partial, withDestinationURL: outsideCache)
+        await #expect(throws: BaseApiError.self) { try await downloader.invalidateCachedDownload(info) }
+        #expect(try Data(contentsOf: final) == original)
+        #expect(try Data(contentsOf: outsideCache) == original)
+        #expect(try partial.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true)
+    }
+
+    @Test func invalidatingCachePreservesAnotherDownloaderActiveEntry() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let cache = root.appendingPathComponent("cache")
+        let downloader = MediaDownloader(cacheRoot: cache)
+        let other = MediaDownloader(cacheRoot: cache)
+        let info = MediaResponse(chunkSize: 10, fileHash: "active", fileName: "avatar.png", fileSize: 100)
+        let final = try await downloader.getCachedFilePath(info)
+        let source = root.appendingPathComponent("source")
+        let bytes = Data((0..<100).map(UInt8.init))
+        try bytes.write(to: source)
+
+        let stream = await downloader.download(info, storageURL: source)
+        var iterator = stream.makeAsyncIterator()
+        let first = try await iterator.next()
+        #expect(first?.isLastChunk == false)
+        await #expect(throws: BaseApiError(code: 102, title: "Download already in progress")) {
+            try await other.invalidateCachedDownload(info)
+        }
+        #expect(files.fileExists(atPath: final.appendingPathExtension("part").path))
+
+        var recovered = try #require(first).data
+        while let chunk = try await iterator.next() { recovered.append(chunk.data) }
+        #expect(recovered == bytes)
+        #expect(try Data(contentsOf: final) == bytes)
+    }
+
+    @Test func cancellingDownloadToCacheFinishesLeaseBeforeReturning() async throws {
+        let session = dripSession()
+        defer { session.invalidateAndCancel() }
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let downloader = MediaDownloader(session: session, cacheRoot: root)
+        let other = MediaDownloader(cacheRoot: root)
+        let info = MediaResponse(chunkSize: 1000, fileHash: "cancelled", fileName: "avatar.png", fileSize: 1000)
+        let final = try await downloader.getCachedFilePath(info)
+        let partial = final.appendingPathExtension("part")
+        let task = Task {
+            try await downloader.downloadToCache(info, storageURL: URL(string: "https://example.com/body")!)
+        }
+        defer { task.cancel() }
+        let limit = ContinuousClock.now.advanced(by: .seconds(1))
+        while !files.fileExists(atPath: partial.path) && ContinuousClock.now < limit {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        try #require(files.fileExists(atPath: partial.path))
+
+        task.cancel()
+        await #expect(throws: CancellationError.self) { try await task.value }
+        try await other.invalidateCachedDownload(info)
+        #expect(!files.fileExists(atPath: partial.path))
+    }
+
+    @Test func directDownloadDoesNotRetryRejectedRange() async throws {
+        let files = FileManager.default
+        let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? files.removeItem(at: root) }
+        let bytes = Data([1, 2, 3, 4])
+        try await confirmation("The rejected range is requested once") { rejectedRange in
+            let session = mockSession { request in
+                let range = request.value(forHTTPHeaderField: "Range")
+                if range == "bytes=2-3" { rejectedRange() }
+                else { #expect(range == "bytes=0-3") }
+                return (200, bytes, [:])
+            }
+            defer { session.invalidateAndCancel() }
+            let downloader = MediaDownloader(session: session, cacheRoot: root)
+            let info = MediaResponse(chunkSize: 4, fileName: "avatar.png", fileSize: 4)
+            let final = try await downloader.getCachedFilePath(info)
+            try Data([0, 0]).write(to: final.appendingPathExtension("part"))
+            let origin = URL(string: "https://example.com/avatar")!
+            await #expect(throws: BaseApiError(code: 200, title: "Storage did not honor byte range")) {
+                try await downloader.downloadToCache(info, storageURL: origin)
+            }
+
+            try await downloader.invalidateCachedDownload(info)
+            let recovered = try await downloader.downloadToCache(info, storageURL: origin)
+            #expect(try Data(contentsOf: recovered) == bytes)
+        }
+    }
 }
