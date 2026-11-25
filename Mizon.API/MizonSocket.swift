@@ -283,6 +283,8 @@ public actor MizonSocket {
             await connection.on("OnlineClientCountChanged") { [weak self] (count: OnlineClientCount) async -> Void in
                 await self?.applyOnlineClientCount(count)
             }
+            // SignalR must decode the event even though the invocation result confirms local presence.
+            await connection.on("WindowPresenceChanged") { (_: ClientWindowPresenceResponse) async -> Void in }
             await connection.on("EntityViewersCountUpdated") { [weak self] (type: String, id: String, count: Int) async -> Void in
                 guard let id = UUID(uuidString: id) else { return }
                 await self?.emit(.entityViewersCountChanged(entityType: type, entityId: id, count: count))
