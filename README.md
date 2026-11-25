@@ -84,6 +84,8 @@ await socket.dispose()
 
 Call `dispose()` when the owning task/view stops, including its error/cancellation paths. `Examples/NativeUsage.swift` includes cleanup on failure. Automatic reconnect and transport negotiation are handled by Microsoft's package; `MizonSocket` rejoins the last entity after reconnect. The token factory reads the current `MizonApi` token. Viewer counts, listener snapshots, listener updates and removals are exposed through an event stream. The source's unused `ReceiveNotification` callback remains without a public notification contract.
 
+For the signed-in account's online state, call `watchAccountPresence()` on each `.connected` event. The call returns the initial snapshot. Further changes arrive as `.accountPresenceChanged` events, and `accountPresence` returns the last snapshot for the current connection and credential. This state covers all active devices on the same account. Use `setWindowPresence(isActive:)` for this device's window activity and `windowPresence` for its acknowledgement. Older servers may lack `WatchAccountPresence`; this call can fail while the local window operation continues to work.
+
 ### Media downloads
 
 ```swift

@@ -21,6 +21,7 @@ public actor MizonApi {
         self.token = token; cache.removeAll(); credentialGeneration &+= 1
     }
     public func getToken() -> String? { token }
+    func currentCredential() -> (token: String?, generation: UInt64) { (token, credentialGeneration) }
     public func clearToken() { token = nil; cache.removeAll(); credentialGeneration &+= 1 }
     public func clearCache() { cache.removeAll() }
     public func setDeviceInformation(osVersion: String, deviceIdentifier: String, deviceModel: String,

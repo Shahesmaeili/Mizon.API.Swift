@@ -55,6 +55,7 @@ public enum MizonSocketEvent: Sendable {
     case stateChanged(HubConnectionState)
     case onlineClientsChanged(OnlineClientCount?)
     case windowPresenceChanged(ClientWindowPresenceResponse?)
+    case accountPresenceChanged(ClientAccountPresenceResponse?)
     case entityViewersCountChanged(entityType: String, entityId: UUID, count: Int)
     case musicListenersSnapshot(musicPublicId: UUID, listeners: [MusicListenerPresence])
     case musicListenerUpdated(musicPublicId: UUID, listener: MusicListenerPresence)
@@ -78,12 +79,23 @@ public actor MizonSocket {
     }
     private var presenceIntent: WindowPresenceIntent?
     private var confirmedPresence: ClientWindowPresenceResponse?
+    private var accountWatch: AccountPresenceWatch?
     public private(set) var onlineClients: OnlineClientCount?
     public var windowPresence: ClientWindowPresenceResponse? {
         get async {
             let clientID = await currentClientPublicId
             guard isConnected, confirmedPresence?.clientPublicId == clientID else { return nil }
             return confirmedPresence
+        }
+    }
+
+    public var accountPresence: ClientAccountPresenceResponse? {
+        get async {
+            let credential = await api.currentCredential()
+            guard isConnected, let watch = accountWatch,
+                  watch.matches(epoch: connectionEpoch, clientPublicId: Self.clientPublicId(from: credential.token),
+                                credentialGeneration: credential.generation) else { return nil }
+            return watch.snapshot
         }
     }
 
@@ -132,8 +144,11 @@ public actor MizonSocket {
             connectionEpoch = UUID()
             onlineClients = nil
             confirmedPresence = nil
+            let wasWatchingAccount = accountWatch != nil
+            accountWatch = nil
             emit(.onlineClientsChanged(nil))
             emit(.windowPresenceChanged(nil))
+            if wasWatchingAccount { emit(.accountPresenceChanged(nil)) }
         }
         emit(.stateChanged(value))
     }
@@ -178,6 +193,63 @@ public actor MizonSocket {
             }
             throw CancellationError()
         }
+    }
+
+    /// Observes the signed-in account for this connection, including activity from its other devices.
+    /// Call again after the socket reconnects to restore the observation.
+    public func watchAccountPresence() async throws -> ClientAccountPresenceResponse {
+        try Task.checkCancellation()
+        let epoch = connectionEpoch
+        let credential = await api.currentCredential()
+        try Task.checkCancellation()
+        guard isConnected, connectionEpoch == epoch else { throw CancellationError() }
+        guard let clientID = Self.clientPublicId(from: credential.token) else {
+            throw BaseApiError(code: 401, title: "Account presence requires authentication")
+        }
+        let scope = AccountPresenceWatch.Scope(epoch: epoch, clientPublicId: clientID,
+                                               credentialGeneration: credential.generation)
+        if let accountWatch {
+            guard accountWatch.scope == scope else { throw CancellationError() }
+        } else {
+            accountWatch = AccountPresenceWatch(scope: scope)
+        }
+        // Capturing the epoch also fences a callback already queued when the connection closes.
+        await connection.on("AccountPresenceChanged") { [weak self] (response: ClientAccountPresenceResponse) async -> Void in
+            _ = await self?.receiveAccountPresence(response, for: scope)
+        }
+
+        try Task.checkCancellation()
+        guard isConnected, accountWatch?.scope == scope else { throw CancellationError() }
+        let response: ClientAccountPresenceResponse = try await connection.invoke(method: "WatchAccountPresence")
+        try Task.checkCancellation()
+        guard response.clientPublicId == clientID, response.revision >= 0 else {
+            throw BaseApiError(code: 107, title: "Invalid account presence response")
+        }
+        guard let accepted = await receiveAccountPresence(response, for: scope) else { throw CancellationError() }
+        return accepted
+    }
+
+    private func receiveAccountPresence(
+        _ response: ClientAccountPresenceResponse,
+        for scope: AccountPresenceWatch.Scope
+    ) async -> ClientAccountPresenceResponse? {
+        guard isConnected, accountWatch?.scope == scope, !Task.isCancelled else { return nil }
+        let credential = await api.currentCredential()
+        guard isConnected, var watch = accountWatch, watch.scope == scope, !Task.isCancelled else { return nil }
+        guard watch.matches(epoch: connectionEpoch, clientPublicId: Self.clientPublicId(from: credential.token),
+                            credentialGeneration: credential.generation) else {
+            if watch.snapshot != nil {
+                watch.clearSnapshot()
+                accountWatch = watch
+                emit(.accountPresenceChanged(nil))
+            }
+            return nil
+        }
+        if watch.update(response) {
+            accountWatch = watch
+            emit(.accountPresenceChanged(response))
+        }
+        return watch.snapshot
     }
 
     private func publishWindowPresence(_ intent: WindowPresenceIntent) async throws {
