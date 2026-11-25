@@ -87,10 +87,36 @@ public actor MediaDownloader {
         let name = try component(info.fileName)
         let folder = cacheRoot.appendingPathComponent(category).appendingPathComponent(id)
         let final = folder.appendingPathComponent(name)
-        // Symlink resolution prevents pre-existing cache symlinks from escaping the root.
-        let root = cacheRoot.resolvingSymlinksInPath().path + "/"
-        guard final.resolvingSymlinksInPath().path.hasPrefix(root) else { throw BaseApiError(code: 102, title: "Cache path escapes root") }
+        try validateCachePath(final, error: "Cache path escapes root")
         return final
+    }
+
+    private func validateCachePath(_ entry: URL, error: String) throws {
+        let root = try Self.physicalCachePath(cacheRoot)
+        let path = try Self.physicalCachePath(entry)
+        let prefix = root == "/" ? root : root + "/"
+        guard path != root, path.hasPrefix(prefix) else { throw BaseApiError(code: 102, title: error) }
+    }
+
+    private static func physicalCachePath(_ url: URL) throws -> String {
+        if let path = realpath(url.path, nil) {
+            defer { free(path) }
+            return String(cString: path)
+        }
+        guard errno == ENOENT else { throw cacheFileError() }
+
+        // Foundation can use "/tmp" for an existing directory and "/private/tmp"
+        // for its missing child. Resolve the existing ancestor through the same
+        // filesystem API, then append missing path components without changing aliases.
+        var metadata = stat()
+        if lstat(url.path, &metadata) == 0 {
+            throw BaseApiError(code: 102, title: "Invalid cached media symlink")
+        }
+        guard errno == ENOENT else { throw cacheFileError() }
+        let parent = url.deletingLastPathComponent()
+        guard parent.path != url.path else { throw cacheFileError() }
+        let directory = try physicalCachePath(parent)
+        return (directory == "/" ? directory : directory + "/") + url.lastPathComponent
     }
 
     /// Removes the completed file and its partial download after a caller detects unusable cached content.
@@ -102,7 +128,7 @@ public actor MediaDownloader {
         defer { Self.cacheLeases.release(lease) }
 
         let flags = O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC
-        var directory = open(cacheRoot.resolvingSymlinksInPath().path, flags)
+        var directory = open(try Self.physicalCachePath(cacheRoot), flags)
         if directory < 0 && errno == ENOENT { return }
         guard directory >= 0 else { throw Self.cacheFileError() }
         defer { _ = close(directory) }
@@ -284,9 +310,7 @@ public actor MediaDownloader {
                 instantaneousSpeedBytesPerSecond: 0, fileSize: fileSize, path: final, isLastChunk: true), to: continuation)
             return
         }
-        guard partial.resolvingSymlinksInPath().path.hasPrefix(cacheRoot.resolvingSymlinksInPath().path + "/") else {
-            throw BaseApiError(code: 102, title: "Invalid partial cache path")
-        }
+        try validateCachePath(partial, error: "Invalid partial cache path")
         if !FileManager.default.fileExists(atPath: partial.path) { FileManager.default.createFile(atPath: partial.path, contents: nil) }
         let output = try FileHandle(forWritingTo: partial)
         defer { try? output.close() }
@@ -456,10 +480,10 @@ public actor MediaDownloader {
 
     private final class CacheLeases: @unchecked Sendable {
         private let lock = NSLock()
-        private var leased: Set<URL> = []
+        private var leased: Set<String> = []
 
-        func acquire(final: URL, partial: URL) throws -> Set<URL> {
-            let paths = Set([final.resolvingSymlinksInPath(), partial.resolvingSymlinksInPath()])
+        func acquire(final: URL, partial: URL) throws -> Set<String> {
+            let paths = try Set([physicalCachePath(final), physicalCachePath(partial)])
             try lock.withLock {
                 guard leased.isDisjoint(with: paths) else {
                     throw BaseApiError(code: 102, title: "Download already in progress")
@@ -469,7 +493,7 @@ public actor MediaDownloader {
             return paths
         }
 
-        func release(_ paths: Set<URL>) {
+        func release(_ paths: Set<String>) {
             lock.withLock { leased.subtract(paths) }
         }
     }

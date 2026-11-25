@@ -498,6 +498,31 @@ extension MizonAPITests {
         #expect(data == bytes)
     }
 
+    #if os(macOS)
+    @Test func downloadCreatesAndPromotesPartialUnderAliasedCacheRoot() async throws {
+        let files = FileManager.default
+        let root = URL(filePath: "/private/tmp", directoryHint: .isDirectory)
+            .appending(path: "mizon-media-" + UUID().uuidString, directoryHint: .isDirectory)
+        try files.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? files.removeItem(at: root) }
+        let source = root.appending(path: "source")
+        let bytes = Data([1, 2, 3, 4])
+        try bytes.write(to: source)
+
+        let downloader = MediaDownloader(cacheRoot: root.appending(path: "cache"))
+        let info = MediaResponse(chunkSize: 2, fileHash: "alias", fileName: "preview.mp4", fileSize: 4)
+        let final = try await downloader.downloadToCache(info, storageURL: source)
+        #expect(try Data(contentsOf: final) == bytes)
+        #expect(!files.fileExists(atPath: final.appendingPathExtension("part").path))
+
+        try await downloader.invalidateCachedDownload(info)
+        let outsideCache = root.appending(path: "outside")
+        try files.createSymbolicLink(at: final.appendingPathExtension("part"), withDestinationURL: outsideCache)
+        await #expect(throws: BaseApiError.self) { try await downloader.downloadToCache(info, storageURL: source) }
+        #expect(!files.fileExists(atPath: outsideCache.path))
+    }
+    #endif
+
     @Test func invalidatingUnusableCacheRemovesPartialAndAllowsFreshDownload() async throws {
         let files = FileManager.default
         let root = files.temporaryDirectory.appendingPathComponent(UUID().uuidString)
